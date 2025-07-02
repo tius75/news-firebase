@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memuat Halaman...</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <script>
+        (async () => {
+            // KONFIGURASI LENGKAP DIMASUKKAN DI SINI
+            const firebaseConfig = {
+                apiKey: "AIzaSyCNnM11tIUEl4eu5AYnObXdlDI47EZts-A",
+                authDomain: "petugan-jawa-news.firebaseapp.com",
+                projectId: "petugan-jawa-news",
+                storageBucket: "petugan-jawa-news.firebasestorage.app",
+                messagingSenderId: "928855786984",
+                appId: "1:928855786984:web:9d7f0b7a7022943895d05d",
+                measurementId: "G-DV19ZVP0KE"
+            };
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+
+            const params = new URLSearchParams(window.location.search);
+            const slug = params.get('slug');
+
+            if (!slug) {
+                document.open();
+                document.write('<h1>Error: Slug halaman tidak ditemukan.</h1>');
+                document.close();
+                return;
+            }
+
+            try {
+                const querySnapshot = await db.collection('halaman_khusus').where('slug', '==', slug).limit(1).get();
+                if (!querySnapshot.empty) {
+                    const pageData = querySnapshot.docs[0].data();
+                    document.open();
+                    document.write(pageData.kontenHtml);
+                    document.close();
+                } else {
+                    document.open();
+                    document.write('<h1>404: Halaman tidak ditemukan.</h1>');
+                    document.close();
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                document.open();
+                document.write('<h1>Error saat memuat halaman. Silakan cek console.</h1>');
+                document.close();
+            }
+        })();
+    </script>
+</head>
+<body>
+    <p style="text-align: center; font-family: sans-serif; padding-top: 50px;">Memuat...</p>
+</body>
+</html>

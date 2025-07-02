@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor Halaman HTML</title>
+    <style>
+        body{font-family:sans-serif;background-color:#f4f7f6;padding:20px}
+        .container{max-width:900px;margin:0 auto;background:white;padding:25px;border-radius:8px}
+        .form-group{margin-bottom:20px} label{display:block;margin-bottom:8px;font-weight:bold}
+        input,textarea{width:100%;padding:10px;box-sizing:border-box;border:1px solid #ccc;border-radius:5px}
+        input[readonly] { background-color: #eee; cursor: not-allowed; }
+        textarea{min-height:400px;font-family:monospace;font-size:14px}
+        button{padding:12px 25px;border:none;border-radius:6px;cursor:pointer;background-color:#3498db;color:white}
+        button:disabled { background-color: #bdc3c7; }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1 id="page-title">Buat Halaman HTML Baru</h1>
+        <form id="html-form">
+            <div class="form-group">
+                <label for="judul">Judul Halaman (untuk referensi di dasbor)</label>
+                <input type="text" id="judul" required>
+            </div>
+            <div class="form-group">
+                <label for="slug">Slug URL (Dibuat Otomatis)</label>
+                <input type="text" id="slug" readonly placeholder="Akan terisi otomatis setelah judul diketik...">
+            </div>
+            <div class="form-group">
+                <label for="kontenHtml">Kode HTML Lengkap</label>
+                <textarea id="kontenHtml" placeholder="Tempelkan seluruh kode HTML Anda di sini, dari <html> sampai </html>" required></textarea>
+            </div>
+            <button type="submit" id="submit-button">Simpan Halaman</button>
+            <a href="dashboard.html" style="margin-left: 15px;">Kembali</a>
+        </form>
+    </div>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCNnM11tIUEl4eu5AYnObXdlDI47EZts-A",
+            authDomain: "petugan-jawa-news.firebaseapp.com",
+            projectId: "petugan-jawa-news",
+            storageBucket: "petugan-jawa-news.firebasestorage.app",
+            messagingSenderId: "928855786984",
+            appId: "1:928855786984:web:9d7f0b7a7022943895d05d",
+            measurementId: "G-DV19ZVP0KE"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        firebase.auth().onAuthStateChanged(user => { if (!user) window.location.href = 'login.html'; });
+
+        const judulInput = document.getElementById('judul');
+        const slugInput = document.getElementById('slug');
+
+        function createSlug(text) {
+            if (!text) return '';
+            return text.toString().toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^\w\-]+/g, '')
+                .replace(/\-\-+/g, '-')
+                .replace(/^-+/, '')
+                .replace(/-+$/, '');
+        }
+
+        // Event listener untuk membuat slug secara otomatis
+        judulInput.addEventListener('keyup', () => {
+            slugInput.value = createSlug(judulInput.value);
+        });
+
+        const params = new URLSearchParams(window.location.search);
+        const editId = params.get('id');
+
+        if (editId) {
+            document.getElementById('page-title').textContent = 'Edit Halaman HTML';
+            db.collection('halaman_khusus').doc(editId).get().then(doc => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    judulInput.value = data.judul;
+                    slugInput.value = data.slug;
+                    document.getElementById('kontenHtml').value = data.kontenHtml;
+                }
+            });
+        }
+
+        document.getElementById('html-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const pageData = {
+                judul: judulInput.value.trim(),
+                slug: slugInput.value.trim(),
+                kontenHtml: document.getElementById('kontenHtml').value
+            };
+
+            if (!pageData.judul || !pageData.slug || !pageData.kontenHtml) {
+                return alert('Semua kolom harus diisi!');
+            }
+
+            const submitButton = document.getElementById('submit-button');
+            submitButton.disabled = true;
+            submitButton.textContent = 'Menyimpan...';
+
+            try {
+                if (editId) {
+                    await db.collection('halaman_khusus').doc(editId).set(pageData);
+                    alert('Halaman berhasil di-update!');
+                } else {
+                    await db.collection('halaman_khusus').add(pageData);
+                    alert('Halaman berhasil dibuat!');
+                }
+                window.location.href = 'dashboard.html';
+            } catch (error) {
+                alert('Gagal menyimpan: ' + error);
+                submitButton.disabled = false;
+                submitButton.textContent = 'Simpan Halaman';
+            }
+        });
+    </script>
+</body>
+</html>
