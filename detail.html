@@ -893,6 +893,23 @@
         const synth = window.speechSynthesis;
         let currentUtterance = null;
         let isSpeaking = false;
+        let voices = []; // Array to store available voices
+
+        // Function to populate voices once they are loaded
+        function populateVoices() {
+            voices = synth.getVoices();
+            // Optional: Log voices to console to see available options
+            // console.log("Available voices:", voices);
+        }
+
+        // Listen for voices to be loaded (important for some browsers/devices)
+        if (synth.onvoiceschanged !== undefined) {
+            synth.onvoiceschanged = populateVoices;
+        } else {
+            // Fallback for browsers that don't fire onvoiceschanged immediately
+            populateVoices();
+        }
+
 
         // --- FUNGSI UTILITY ---
         function getFirstImageFromContent(htmlContent) {
@@ -1002,9 +1019,13 @@
             currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
             currentUtterance.lang = 'id-ID'; // Set language to Indonesian
 
-            // Optional: Set voice if available and desired
-            // You can get available voices with synth.getVoices() and then set currentUtterance.voice
-            // For mobile, voices might not be immediately available.
+            // Attempt to find an Indonesian voice
+            const idVoice = voices.find(voice => voice.lang === 'id-ID');
+            if (idVoice) {
+                currentUtterance.voice = idVoice;
+            } else {
+                console.warn("Indonesian voice not found. Using default voice.");
+            }
 
             currentUtterance.onstart = () => {
                 isSpeaking = true;
@@ -1023,10 +1044,15 @@
                 isSpeaking = false;
                 ttsBtnIcon.classList.remove('fa-volume-mute');
                 ttsBtnIcon.classList.add('fa-volume-up');
-                // You might want to show a user-friendly message here, e.g., "Gagal memutar suara."
+                // Provide user feedback
+                alert("Gagal memutar suara. Browser Anda mungkin tidak mendukung Text-to-Speech atau tidak ada suara yang tersedia.");
             };
 
-            synth.speak(currentUtterance);
+            // A common workaround for mobile browsers: speak after a short delay
+            // This can sometimes help with autoplay restrictions, though not guaranteed.
+            setTimeout(() => {
+                synth.speak(currentUtterance);
+            }, 100); // Small delay
         }
 
 
