@@ -947,6 +947,8 @@
         let isSpeaking = false;
         let voices = []; // To store available voices
         let ttsReady = false; // Flag to indicate if TTS voices are loaded and ready
+        let currentChunkIndex = 0; // For chunking
+        let articleChunks = []; // To store text chunks
 
         // Function to display temporary messages to the user
         function showTemporaryMessage(message, duration = 3000) {
@@ -1094,7 +1096,7 @@
             return null; // Let the browser pick default
         }
 
-        // --- FUNGSI TEXT-TO-SPEECH ---
+        // --- FUNGSI UTAMA TEXT-TO-SPEECH ---
         function toggleSpeech() {
             const articleContentElement = document.querySelector('.article-content');
             const ttsBtnIcon = document.querySelector('#text-to-speech-btn i');
@@ -1116,10 +1118,18 @@
                 return;
             }
 
-            const textToSpeak = stripHtmlAndProcessAcronyms(articleContentElement.innerHTML);
+            // Prepare text chunks if not already prepared or if starting new speech
+            if (articleChunks.length === 0 || currentChunkIndex >= articleChunks.length) {
+                const rawText = stripHtmlAndProcessAcronyms(articleContentElement.innerHTML);
+                // Split text by paragraphs (double newline) or sentences (period followed by space)
+                // This is a heuristic and might need fine-tuning for specific content.
+                articleChunks = rawText.split(/(\n\n|\. )/).filter(chunk => chunk.trim().length > 0);
+                currentChunkIndex = 0;
+                console.log("Article chunks created:", articleChunks.length);
+            }
 
-            if (textToSpeak.trim() === '') {
-                console.warn("No text to speak.");
+            if (articleChunks.length === 0) {
+                console.warn("No text to speak after chunking.");
                 showTemporaryMessage("Tidak ada teks yang bisa dibaca untuk artikel ini.", 3000);
                 return;
             }
@@ -1133,7 +1143,7 @@
                 setTimeout(() => {
                     if (ttsReady) {
                         // If voices are ready now, proceed to speak
-                        speakArticleContent(textToSpeak, ttsBtnIcon);
+                        speakNextChunk(ttsBtnIcon);
                     } else {
                         // If still not ready, hide loading and inform user
                         showTtsLoading(false);
@@ -1145,49 +1155,74 @@
             }
 
             // If voices are already ready, proceed directly
-            speakArticleContent(textToSpeak, ttsBtnIcon);
+            speakNextChunk(ttsBtnIcon);
         }
 
-        // Helper function to actually speak the content
-        function speakArticleContent(textToSpeak, ttsBtnIcon) {
-            currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
-            currentUtterance.lang = 'id-ID'; // Set language to Indonesian
+        // Helper function to speak the next chunk of content
+        function speakNextChunk(ttsBtnIcon) {
+            if (currentChunkIndex < articleChunks.length) {
+                const textToSpeak = articleChunks[currentChunkIndex];
+                console.log(`Speaking chunk ${currentChunkIndex + 1}/${articleChunks.length}: "${textToSpeak.substring(0, 50)}..."`); // Log first 50 chars
 
-            const selectedVoice = getIndonesianVoice();
-            if (selectedVoice) {
-                currentUtterance.voice = selectedVoice;
-            }
+                currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
+                currentUtterance.lang = 'id-ID'; // Set language to Indonesian
 
-            currentUtterance.onstart = () => {
-                isSpeaking = true;
-                ttsBtnIcon.classList.remove('fa-volume-up');
-                ttsBtnIcon.classList.add('fa-volume-mute');
-                showTtsLoading(false); // Hide loading once speaking starts
-                console.log("Speech started.");
-            };
+                const selectedVoice = getIndonesianVoice();
+                if (selectedVoice) {
+                    currentUtterance.voice = selectedVoice;
+                }
 
-            currentUtterance.onend = () => {
+                currentUtterance.onstart = () => {
+                    isSpeaking = true;
+                    ttsBtnIcon.classList.remove('fa-volume-up');
+                    ttsBtnIcon.classList.add('fa-volume-mute');
+                    showTtsLoading(false); // Hide loading once speaking starts
+                };
+
+                currentUtterance.onend = () => {
+                    currentChunkIndex++;
+                    if (currentChunkIndex < articleChunks.length) {
+                        // Speak next chunk after a short pause for natural flow
+                        setTimeout(() => speakNextChunk(ttsBtnIcon), 100); 
+                    } else {
+                        // All chunks spoken
+                        isSpeaking = false;
+                        ttsBtnIcon.classList.remove('fa-volume-mute');
+                        ttsBtnIcon.classList.add('fa-volume-up');
+                        console.log("All article chunks spoken.");
+                        articleChunks = []; // Reset chunks for next time
+                        currentChunkIndex = 0;
+                    }
+                };
+
+                currentUtterance.onerror = (event) => {
+                    console.error('SpeechSynthesisUtterance.onerror', event.error, "for chunk:", textToSpeak);
+                    isSpeaking = false;
+                    ttsBtnIcon.classList.remove('fa-volume-mute');
+                    ttsBtnIcon.classList.add('fa-volume-up');
+                    showTtsLoading(false); // Hide loading on error
+                    showTemporaryMessage("Gagal memutar audio. Coba lagi atau periksa pengaturan suara perangkat Anda.", 5000);
+                    articleChunks = []; // Reset chunks on error
+                    currentChunkIndex = 0;
+                };
+
+                try {
+                    synth.speak(currentUtterance);
+                } catch (error) {
+                    console.error("Error calling synth.speak() for chunk:", error);
+                    showTtsLoading(false); // Hide loading on error
+                    showTemporaryMessage("Terjadi kesalahan saat memulai Text-to-Speech.", 3000);
+                    articleChunks = []; // Reset chunks on error
+                    currentChunkIndex = 0;
+                }
+            } else {
+                // No more chunks to speak, reset state
                 isSpeaking = false;
                 ttsBtnIcon.classList.remove('fa-volume-mute');
                 ttsBtnIcon.classList.add('fa-volume-up');
-                console.log("Speech ended.");
-            };
-
-            currentUtterance.onerror = (event) => {
-                console.error('SpeechSynthesisUtterance.onerror', event.error);
-                isSpeaking = false;
-                ttsBtnIcon.classList.remove('fa-volume-mute');
-                ttsBtnIcon.classList.add('fa-volume-up');
-                showTtsLoading(false); // Hide loading on error
-                showTemporaryMessage("Gagal memutar audio. Coba lagi atau periksa pengaturan suara perangkat Anda.", 5000);
-            };
-
-            try {
-                synth.speak(currentUtterance);
-            } catch (error) {
-                console.error("Error calling synth.speak():", error);
-                showTtsLoading(false); // Hide loading on error
-                showTemporaryMessage("Terjadi kesalahan saat memulai Text-to-Speech.", 3000);
+                showTtsLoading(false);
+                articleChunks = [];
+                currentChunkIndex = 0;
             }
         }
 
