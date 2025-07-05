@@ -1,210 +1,295 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <!-- ... (keep all existing head content) ... -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Berita - Petungan</title>
+    <style>
+        /* CSS styles tetap sama seperti sebelumnya */
+        :root {
+            --primary-font: 'Roboto', sans-serif;
+            --heading-font: 'Merriweather', serif;
+            --text-color: #333;
+            --background-color: #f4f4f4;
+            --header-bg: #fff;
+            --card-bg: #fff;
+            --accent-color: #8B4513;
+            --light-grey: #eee;
+            --dark-grey: #777;
+        }
+        
+        body {
+            font-family: var(--primary-font);
+            margin: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            padding-top: 70px;
+            padding-bottom: 120px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+        
+        .article-container {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .article-title {
+            font-family: var(--heading-font);
+            font-size: 2.2rem;
+            line-height: 1.2;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        
+        .article-meta {
+            font-size: 0.9em;
+            color: var(--dark-grey);
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--light-grey);
+            padding-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        
+        .article-image {
+            width: 100%;
+            height: auto;
+            max-height: 450px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+        
+        .article-content {
+            font-size: 1.1em;
+            line-height: 1.8;
+        }
+        
+        .meta-right-icons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        
+        .text-to-speech-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: var(--accent-color);
+            color: white;
+            font-size: 18px;
+            transition: transform 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        /* Tambahan style lainnya tetap sama */
+    </style>
 </head>
 <body>
-    <!-- ... (keep all existing body content) ... -->
+    <header class="site-header">
+        <a href="index.html">
+            <img src="logo.png" alt="Logo Petungan" class="logo">
+        </a>
+        <a href="index.html">
+            <h1 class="site-title">Petungan</h1>
+        </a>
+    </header>
+
+    <main class="container">
+        <div class="article-container" id="article-detail-container">
+            <h1 class="article-title">Contoh Judul Berita</h1>
+            <div class="article-meta">
+                <span>Oleh: Redaksi Petungan - 5 Juli 2025</span>
+                <div class="meta-right-icons">
+                    <button id="text-to-speech-btn" class="text-to-speech-button" title="Dengarkan Berita">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                </div>
+            </div>
+            <img src="https://picsum.photos/1200/600" alt="Gambar Berita" class="article-image">
+            <div class="article-content">
+                <p>Ini adalah contoh konten berita. NASA (National Aeronautics and Space Administration) telah mengumumkan misi baru mereka pada tahun 2025. Misi ini akan menelan biaya sekitar 2,5 miliar dolar.</p>
+                <p>Pada tahun 2023, mereka telah berhasil meluncurkan satelit komunikasi terbaru. Tahun depan, mereka berencana untuk mengirim misi ke Mars dengan anggaran 1,8 miliar dolar.</p>
+                <p>Contoh angka lainnya: 12345, 1000000, dan 3,14.</p>
+            </div>
+        </div>
+    </main>
 
     <script>
-        // --- GLOBAL SPEECH SYNTHESIS VARIABLES ---
+        // Text-to-Speech Functionality
         const synth = window.speechSynthesis;
         let currentUtterance = null;
         let isSpeaking = false;
         let voicesLoaded = false;
-
-        // --- FUNGSI UTILITY ---
-        function getFirstImageFromContent(htmlContent) {
-            if (!htmlContent) return null;
-            const match = htmlContent.match(/<img[^>]+src="([^">]+)"/);
-            return match ? match[1] : null;
-        }
-
-        function removeFirstImageTag(htmlContent) {
-            if (!htmlContent) return htmlContent;
-            return htmlContent.replace(/<img[^>]*?>/, '');
+        
+        // Fungsi untuk mengubah angka menjadi teks dalam Bahasa Indonesia
+        function angkaKeTeks(angka) {
+            const satuan = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan'];
+            const belasan = ['sepuluh', 'sebelas', 'dua belas', 'tiga belas', 'empat belas', 'lima belas', 
+                           'enam belas', 'tujuh belas', 'delapan belas', 'sembilan belas'];
+            const puluhan = ['', 'sepuluh', 'dua puluh', 'tiga puluh', 'empat puluh', 'lima puluh', 
+                           'enam puluh', 'tujuh puluh', 'delapan puluh', 'sembilan puluh'];
+            
+            // Handle angka desimal
+            if (angka.toString().includes('.')) {
+                const parts = angka.toString().split('.');
+                return angkaKeTeks(parseInt(parts[0])) + ' koma ' + parts[1].split('').map(d => satuan[parseInt(d)]).join(' ');
+            }
+            
+            // Handle angka bulat
+            angka = parseInt(angka);
+            if (angka === 0) return 'nol';
+            if (angka < 10) return satuan[angka];
+            if (angka < 20) return belasan[angka - 10];
+            if (angka < 100) return puluhan[Math.floor(angka / 10)] + (angka % 10 !== 0 ? ' ' + satuan[angka % 10] : '');
+            if (angka < 200) return 'seratus' + (angka % 100 !== 0 ? ' ' + angkaKeTeks(angka % 100) : '');
+            if (angka < 1000) return satuan[Math.floor(angka / 100)] + ' ratus' + (angka % 100 !== 0 ? ' ' + angkaKeTeks(angka % 100) : '');
+            if (angka < 2000) return 'seribu' + (angka % 1000 !== 0 ? ' ' + angkaKeTeks(angka % 1000) : '');
+            if (angka < 1000000) return angkaKeTeks(Math.floor(angka / 1000)) + ' ribu' + (angka % 1000 !== 0 ? ' ' + angkaKeTeks(angka % 1000) : '');
+            if (angka < 1000000000) return angkaKeTeks(Math.floor(angka / 1000000)) + ' juta' + (angka % 1000000 !== 0 ? ' ' + angkaKeTeks(angka % 1000000) : '');
+            return angka.toString();
         }
         
-        function stripHtml(html) {
-            let doc = new DOMParser().parseFromString(html, 'text/html');
-            return doc.body.textContent || "";
-        }
-
-        // Improved text normalization for speech
-        function normalizeTextForSpeech(text) {
-            // Handle acronyms (2+ uppercase letters together) - pronounce as words
-            text = text.replace(/\b([A-Z]{2,})\b/g, (match) => {
-                // Common acronyms that should be pronounced as words
-                const acronyms = {
-                    'NASA': 'nasa',
-                    'UNICEF': 'unicef',
-                    'UNESCO': 'unesco',
-                    'ASEAN': 'asean'
-                    // Add more acronyms as needed
-                };
-                return acronyms[match] || match.toLowerCase();
+        // Fungsi untuk memproses teks sebelum dibacakan
+        function prosesTeksUntukTTS(teks) {
+            // Daftar singkatan yang umum dan cara pengucapannya
+            const singkatan = {
+                'NASA': 'nasa',
+                'ASEAN': 'asean',
+                'WHO': 'who',
+                'UNICEF': 'unicef'
+                // Tambahkan singkatan lainnya sesuai kebutuhan
+            };
+            
+            // Proses singkatan
+            Object.keys(singkatan).forEach(singkat => {
+                teks = teks.replace(new RegExp(singkat, 'g'), singkatan[singkat]);
             });
-
-            // Handle years (4-digit numbers)
-            text = text.replace(/\b(19|20)\d{2}\b/g, (match) => {
-                // Convert year to spoken form (e.g., "2025" -> "dua ribu dua puluh lima")
-                const year = parseInt(match);
-                if (year >= 2000) {
-                    const thousands = Math.floor(year / 1000);
-                    const remainder = year % 1000;
-                    return `${numberToWords(thousands)} ribu${remainder > 0 ? ' ' + numberToWords(remainder) : ''}`;
+            
+            // Proses tahun (4 digit angka)
+            teks = teks.replace(/\b(19|20)\d{2}\b/g, tahun => {
+                const angka = parseInt(tahun);
+                if (angka >= 2000) {
+                    const ribuan = Math.floor(angka / 1000);
+                    const sisa = angka % 1000;
+                    return angkaKeTeks(ribuan) + ' ribu' + (sisa > 0 ? ' ' + angkaKeTeks(sisa) : '');
                 } else {
-                    return numberToWords(year);
+                    return angkaKeTeks(angka);
                 }
             });
-
-            // Handle numbers
-            text = text.replace(/\b\d+\b/g, (match) => {
-                return numberToWords(parseInt(match));
-            });
-
-            return text;
-        }
-
-        // Helper function to convert numbers to Indonesian words
-        function numberToWords(num) {
-            const ones = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan'];
-            const teens = ['sepuluh', 'sebelas', 'dua belas', 'tiga belas', 'empat belas', 'lima belas', 
-                          'enam belas', 'tujuh belas', 'delapan belas', 'sembilan belas'];
-            const tens = ['', 'sepuluh', 'dua puluh', 'tiga puluh', 'empat puluh', 'lima puluh', 
-                         'enam puluh', 'tujuh puluh', 'delapan puluh', 'sembilan puluh'];
             
-            if (num === 0) return 'nol';
-            if (num < 10) return ones[num];
-            if (num < 20) return teens[num - 10];
-            if (num < 100) return tens[Math.floor(num / 10)] + (num % 10 !== 0 ? ' ' + ones[num % 10] : '');
-            if (num < 200) return 'seratus' + (num % 100 !== 0 ? ' ' + numberToWords(num % 100) : '');
-            if (num < 1000) return ones[Math.floor(num / 100)] + ' ratus' + (num % 100 !== 0 ? ' ' + numberToWords(num % 100) : '');
-            if (num < 2000) return 'seribu' + (num % 1000 !== 0 ? ' ' + numberToWords(num % 1000) : '');
-            if (num < 1000000) return numberToWords(Math.floor(num / 1000)) + ' ribu' + (num % 1000 !== 0 ? ' ' + numberToWords(num % 1000) : '');
-            if (num < 1000000000) return numberToWords(Math.floor(num / 1000000)) + ' juta' + (num % 1000000 !== 0 ? ' ' + numberToWords(num % 1000000) : '');
-            return num.toString();
+            // Proses angka umum
+            teks = teks.replace(/\b\d[\d,.]*\b/g, angka => {
+                // Hapus koma pemisah ribuan
+                const angkaBersih = angka.replace(/,/g, '');
+                return angkaKeTeks(angkaBersih);
+            });
+            
+            return teks;
         }
-
-        // --- FUNGSI TEXT-TO-SPEECH (IMPROVED) ---
-        function toggleSpeech() {
-            const articleContentElement = document.querySelector('.article-content');
-            const ttsBtnIcon = document.querySelector('#text-to-speech-btn i');
-
-            if (!articleContentElement) {
-                console.error("Article content element not found.");
-                return;
-            }
-
-            // If speech is currently ongoing, stop it
+        
+        // Fungsi untuk memulai/menghentikan text-to-speech
+        function toggleTextToSpeech() {
+            const ttsBtn = document.getElementById('text-to-speech-btn');
+            const icon = ttsBtn.querySelector('i');
+            
             if (synth.speaking) {
+                // Jika sedang berbicara, hentikan
                 synth.cancel();
                 isSpeaking = false;
-                ttsBtnIcon.classList.remove('fa-volume-mute');
-                ttsBtnIcon.classList.add('fa-volume-up');
+                icon.classList.remove('fa-volume-mute');
+                icon.classList.add('fa-volume-up');
                 return;
             }
-
-            // Prepare the text to speak
-            let textToSpeak = stripHtml(articleContentElement.innerHTML);
-            textToSpeak = normalizeTextForSpeech(textToSpeak);
-
-            if (textToSpeak.trim() === '') {
-                console.warn("No text to speak.");
+            
+            // Jika tidak berbicara, mulai berbicara
+            const articleContent = document.querySelector('.article-content');
+            let teks = articleContent.innerText || articleContent.textContent;
+            teks = prosesTeksUntukTTS(teks);
+            
+            if (teks.trim() === '') {
+                alert('Tidak ada teks yang bisa dibacakan');
                 return;
             }
-
-            // Create new utterance
-            currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
-            currentUtterance.lang = 'id-ID'; // Set language to Indonesian
-
-            // Improved voice selection for cross-device compatibility
+            
+            currentUtterance = new SpeechSynthesisUtterance(teks);
+            currentUtterance.lang = 'id-ID';
+            
+            // Atur suara yang tersedia
             function setVoice() {
-                if (!voicesLoaded) {
-                    // On some devices, voices aren't immediately available
-                    const voices = synth.getVoices();
-                    if (voices.length > 0) {
-                        voicesLoaded = true;
-                        
-                        // Try to find an Indonesian voice first
-                        const idVoice = voices.find(voice => voice.lang === 'id-ID');
-                        if (idVoice) {
-                            currentUtterance.voice = idVoice;
-                            return;
-                        }
-                        
-                        // Fallback to any available voice
-                        currentUtterance.voice = voices[0];
+                const voices = synth.getVoices();
+                if (voices.length > 0) {
+                    // Prioritaskan suara Bahasa Indonesia
+                    const idVoice = voices.find(voice => voice.lang === 'id-ID');
+                    if (idVoice) {
+                        currentUtterance.voice = idVoice;
                     } else {
-                        // If voices still not loaded, try again in 500ms
-                        setTimeout(setVoice, 500);
-                        return;
+                        // Jika tidak ada suara Bahasa Indonesia, gunakan suara default
+                        currentUtterance.voice = voices[0];
                     }
+                    synth.speak(currentUtterance);
+                } else {
+                    // Jika suara belum dimuat, coba lagi setelah 500ms
+                    setTimeout(setVoice, 500);
                 }
-                
-                // Speak after voice is set
-                synth.speak(currentUtterance);
             }
-
-            // Event handlers
-            currentUtterance.onstart = () => {
+            
+            currentUtterance.onstart = function() {
                 isSpeaking = true;
-                ttsBtnIcon.classList.remove('fa-volume-up');
-                ttsBtnIcon.classList.add('fa-volume-mute');
+                icon.classList.remove('fa-volume-up');
+                icon.classList.add('fa-volume-mute');
             };
-
-            currentUtterance.onend = () => {
+            
+            currentUtterance.onend = function() {
                 isSpeaking = false;
-                ttsBtnIcon.classList.remove('fa-volume-mute');
-                ttsBtnIcon.classList.add('fa-volume-up');
+                icon.classList.remove('fa-volume-mute');
+                icon.classList.add('fa-volume-up');
             };
-
-            currentUtterance.onerror = (event) => {
-                console.error('SpeechSynthesisUtterance.onerror', event);
+            
+            currentUtterance.onerror = function(event) {
+                console.error('Error dalam text-to-speech:', event);
                 isSpeaking = false;
-                ttsBtnIcon.classList.remove('fa-volume-mute');
-                ttsBtnIcon.classList.add('fa-volume-up');
-                
-                // Show user-friendly error message
-                alert('Fitur text-to-speech tidak tersedia di perangkat Anda. Pastikan browser mendukung fitur ini.');
+                icon.classList.remove('fa-volume-mute');
+                icon.classList.add('fa-volume-up');
+                alert('Terjadi kesalahan dalam text-to-speech. Pastikan browser Anda mendukung fitur ini.');
             };
-
-            // Load voices and start speaking
-            if (!voicesLoaded) {
-                // Some devices need this to load voices
-                synth.onvoiceschanged = setVoice;
-                
-                // Try to get voices immediately
-                setVoice();
-            } else {
-                setVoice();
-            }
+            
+            // Coba set suara dan mulai berbicara
+            setVoice();
         }
-
-        // --- (Keep all other existing functions unchanged) ---
-
-        document.addEventListener('DOMContentLoaded', () => {
-            loadNewsDetail(); 
-            loadCategoriesForDesktopNav();
-
-            // Initialize speech synthesis voices
+        
+        // Inisialisasi saat halaman dimuat
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load voices
             if (speechSynthesis) {
-                // Some devices need this to load voices
                 speechSynthesis.onvoiceschanged = function() {
                     voicesLoaded = true;
                 };
                 
-                // Try to get voices immediately
                 const voices = speechSynthesis.getVoices();
                 if (voices.length > 0) {
                     voicesLoaded = true;
                 }
             }
-
-            // ... (keep all other existing event listeners) ...
+            
+            // Event listener untuk tombol text-to-speech
+            document.getElementById('text-to-speech-btn').addEventListener('click', toggleTextToSpeech);
         });
-
-        // ... (keep all other existing code) ...
     </script>
 </body>
 </html>
