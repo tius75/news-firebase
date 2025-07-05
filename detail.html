@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -894,6 +893,35 @@
         const synth = window.speechSynthesis;
         let currentUtterance = null;
         let isSpeaking = false;
+        let voices = []; // To store available voices
+
+        // Function to populate voices array once they are loaded
+        function populateVoiceList() {
+            voices = synth.getVoices();
+            console.log("Available voices:", voices.map(v => v.name));
+            // You can add logic here to select a default voice if needed
+        }
+
+        // Listen for voices to be loaded (important for cross-browser compatibility)
+        if (synth.onvoiceschanged !== undefined) {
+            synth.onvoiceschanged = populateVoiceList;
+        } else {
+            // Fallback for browsers that might not fire onvoiceschanged immediately
+            populateVoiceList(); // Call immediately if event listener not supported
+        }
+
+        // Function to get a preferred Indonesian voice
+        function getIndonesianVoice() {
+            // Try to find an Indonesian voice
+            const idVoice = voices.find(voice => voice.lang === 'id-ID' || voice.lang.startsWith('id-'));
+            if (idVoice) {
+                console.log("Using Indonesian voice:", idVoice.name);
+                return idVoice;
+            }
+            // Fallback to any voice if Indonesian is not found
+            console.warn("Indonesian voice not found, using default voice.");
+            return null; // Let the browser pick default
+        }
 
         // --- FUNGSI UTILITY ---
         function getFirstImageFromContent(htmlContent) {
@@ -908,10 +936,26 @@
             return htmlContent.replace(/<img[^>]*?>/, '');
         }
         
-        // Function to strip HTML tags from a string
-        function stripHtml(html) {
+        // Function to strip HTML tags and attempt to handle common acronyms
+        function stripHtmlAndProcessAcronyms(html) {
             let doc = new DOMParser().parseFromString(html, 'text/html');
-            return doc.body.textContent || "";
+            let text = doc.body.textContent || "";
+
+            // Simple heuristic for common acronyms: convert all-caps words to title case.
+            // This is a best-effort approach and might not be perfect for all cases.
+            // It targets words that are 2 or more uppercase letters.
+            text = text.replace(/\b([A-Z]{2,})\b/g, (match) => {
+                // Specific common acronyms that should be read as words
+                const commonAcronymsToReadAsWords = ['NASA', 'WHO', 'NATO', 'UNICEF', 'ASEAN', 'PBB', 'KPK', 'DPR', 'MPR', 'RI'];
+                if (commonAcronymsToReadAsWords.includes(match.toUpperCase())) { // Use toUpperCase for comparison
+                    return match; // Keep as is, hoping the engine pronounces it as a word
+                }
+                // For other all-caps, convert to title case to encourage reading as a word
+                // e.g., "TEXT" -> "Text", "API" -> "Api"
+                return match.charAt(0).toUpperCase() + match.slice(1).toLowerCase();
+            });
+
+            return text;
         }
 
         function formatCategoryName(slug) {
@@ -981,11 +1025,13 @@
                 isSpeaking = false;
                 ttsBtnIcon.classList.remove('fa-volume-mute');
                 ttsBtnIcon.classList.add('fa-volume-up');
+                console.log("Speech stopped.");
                 return;
             }
 
             // If not speaking, start new speech
-            const textToSpeak = stripHtml(articleContentElement.innerHTML);
+            // Use the new function to strip HTML and process acronyms
+            const textToSpeak = stripHtmlAndProcessAcronyms(articleContentElement.innerHTML);
 
             if (textToSpeak.trim() === '') {
                 console.warn("No text to speak.");
@@ -995,26 +1041,51 @@
             currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
             currentUtterance.lang = 'id-ID'; // Set language to Indonesian
 
+            // Try to set an Indonesian voice if available
+            const selectedVoice = getIndonesianVoice();
+            if (selectedVoice) {
+                currentUtterance.voice = selectedVoice;
+            }
+
             currentUtterance.onstart = () => {
                 isSpeaking = true;
                 ttsBtnIcon.classList.remove('fa-volume-up');
                 ttsBtnIcon.classList.add('fa-volume-mute');
+                console.log("Speech started.");
             };
 
             currentUtterance.onend = () => {
                 isSpeaking = false;
                 ttsBtnIcon.classList.remove('fa-volume-mute');
                 ttsBtnIcon.classList.add('fa-volume-up');
+                console.log("Speech ended.");
             };
 
             currentUtterance.onerror = (event) => {
-                console.error('SpeechSynthesisUtterance.onerror', event);
+                console.error('SpeechSynthesisUtterance.onerror', event.error);
                 isSpeaking = false;
                 ttsBtnIcon.classList.remove('fa-volume-mute');
                 ttsBtnIcon.classList.add('fa-volume-up');
+                // Provide user feedback if possible (e.g., a small temporary message)
+                // For example: showTemporaryMessage("Gagal memutar audio. Coba lagi.");
             };
 
-            synth.speak(currentUtterance);
+            // Check if voices are loaded before speaking (especially for iOS)
+            if (voices.length === 0) {
+                // Attempt to re-populate voices if empty (might happen on initial load or if not fired)
+                populateVoiceList();
+                // Give a small delay and try again, or inform the user
+                setTimeout(() => {
+                    if (voices.length > 0) {
+                        synth.speak(currentUtterance);
+                    } else {
+                        console.warn("Voices not ready after delay, cannot speak.");
+                        // showTemporaryMessage("Suara tidak tersedia. Coba lagi sebentar.");
+                    }
+                }, 500); // Small delay to allow voices to load
+            } else {
+                synth.speak(currentUtterance);
+            }
         }
 
 
