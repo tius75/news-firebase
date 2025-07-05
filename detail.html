@@ -949,6 +949,7 @@
         let ttsReady = false; // Flag to indicate if TTS voices are loaded and ready
         let currentChunkIndex = 0; // For chunking
         let articleChunks = []; // To store text chunks
+        let isPausedBySystem = false; // Flag to track if system paused TTS
 
         // Function to display temporary messages to the user
         function showTemporaryMessage(message, duration = 3000) {
@@ -1109,6 +1110,9 @@
                 ttsBtnIcon.classList.add('fa-volume-up');
                 showTtsLoading(false); // Hide loading if stopped
                 console.log("Speech stopped.");
+                // Reset chunks and index if manually stopped
+                articleChunks = []; 
+                currentChunkIndex = 0;
                 return;
             }
 
@@ -1119,11 +1123,13 @@
             }
 
             // Prepare text chunks if not already prepared or if starting new speech
+            // Only prepare chunks if not already speaking from a paused state
             if (articleChunks.length === 0 || currentChunkIndex >= articleChunks.length) {
                 const rawText = stripHtmlAndProcessAcronyms(articleContentElement.innerHTML);
-                // Split text by paragraphs (double newline) or sentences (period followed by space)
-                // This is a heuristic and might need fine-tuning for specific content.
-                articleChunks = rawText.split(/(\n\n|\. )/).filter(chunk => chunk.trim().length > 0);
+                // Split by sentences (period, question mark, exclamation mark followed by space or end of string)
+                // or by double newlines (paragraphs).
+                // Use a non-capturing group (?:...) for the split delimiters to not include them in the chunks.
+                articleChunks = rawText.split(/(?<=[.?!])\s+|\n\n/).filter(chunk => chunk.trim().length > 0);
                 currentChunkIndex = 0;
                 console.log("Article chunks created:", articleChunks.length);
             }
@@ -1161,7 +1167,13 @@
         // Helper function to speak the next chunk of content
         function speakNextChunk(ttsBtnIcon) {
             if (currentChunkIndex < articleChunks.length) {
-                const textToSpeak = articleChunks[currentChunkIndex];
+                const textToSpeak = articleChunks[currentChunkIndex].trim(); // Trim whitespace from chunk
+                if (textToSpeak.length === 0) { // Skip empty chunks
+                    currentChunkIndex++;
+                    speakNextChunk(ttsBtnIcon);
+                    return;
+                }
+
                 console.log(`Speaking chunk ${currentChunkIndex + 1}/${articleChunks.length}: "${textToSpeak.substring(0, 50)}..."`); // Log first 50 chars
 
                 currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
@@ -1174,13 +1186,16 @@
 
                 currentUtterance.onstart = () => {
                     isSpeaking = true;
+                    isPausedBySystem = false; // Reset system pause flag
                     ttsBtnIcon.classList.remove('fa-volume-up');
                     ttsBtnIcon.classList.add('fa-volume-mute');
                     showTtsLoading(false); // Hide loading once speaking starts
                 };
 
                 currentUtterance.onend = () => {
-                    currentChunkIndex++;
+                    if (!isPausedBySystem) { // Only advance chunk if not paused by system
+                        currentChunkIndex++;
+                    }
                     if (currentChunkIndex < articleChunks.length) {
                         // Speak next chunk after a short pause for natural flow
                         setTimeout(() => speakNextChunk(ttsBtnIcon), 100); 
@@ -1195,9 +1210,27 @@
                     }
                 };
 
+                currentUtterance.onpause = (event) => {
+                    console.log("Speech paused by system (or user).");
+                    isPausedBySystem = true;
+                    isSpeaking = false; // Set isSpeaking to false when paused
+                    ttsBtnIcon.classList.remove('fa-volume-mute');
+                    ttsBtnIcon.classList.add('fa-volume-up');
+                    // Do not advance currentChunkIndex here, as we want to resume from this chunk
+                };
+
+                currentUtterance.onresume = (event) => {
+                    console.log("Speech resumed.");
+                    isPausedBySystem = false;
+                    isSpeaking = true; // Set isSpeaking to true when resumed
+                    ttsBtnIcon.classList.remove('fa-volume-up');
+                    ttsBtnIcon.classList.add('fa-volume-mute');
+                };
+
                 currentUtterance.onerror = (event) => {
                     console.error('SpeechSynthesisUtterance.onerror', event.error, "for chunk:", textToSpeak);
                     isSpeaking = false;
+                    isPausedBySystem = false; // Reset flag on error
                     ttsBtnIcon.classList.remove('fa-volume-mute');
                     ttsBtnIcon.classList.add('fa-volume-up');
                     showTtsLoading(false); // Hide loading on error
