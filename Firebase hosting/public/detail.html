@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <title id="detail-page-title">Memuat Berita...</title>
+    
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5922983068453797"
+        crossorigin="anonymous"></script>
+    
     <meta name="description" content="Sebuah artikel dari situs Petungan.">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="Petungan">
@@ -42,6 +46,7 @@
     <meta name="theme-color" content="#2c3e50"/>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="logo.png">
+    <link rel="icon" href="favicon.png">
 
     <style>
         /* Variabel CSS untuk tema */
@@ -303,13 +308,13 @@
             justify-content: flex-start; /* Pindah ke kiri */
             align-items: center;
             height: 50px; /* Tinggi navigasi desktop */
-            gap: 15px; /* Jarak antar item nav */
+            gap: 25px; /* Meningkatkan jarak antar item nav untuk tampilan yang lebih bersih */
         }
 
         .desktop-nav a {
             display: flex;
             align-items: center;
-            padding: 10px 15px;
+            padding: 10px 0; /* Mengurangi padding horizontal karena gap sudah diatur */
             color: #555;
             font-size: 0.95rem;
             font-weight: 500;
@@ -321,7 +326,7 @@
 
         .desktop-nav a:hover {
             color: var(--accent-color);
-            background-color: var(--light-grey);
+            background-color: transparent; /* Hapus background-color saat hover untuk tampilan yang lebih bersih */
         }
 
         .desktop-nav a.active {
@@ -599,6 +604,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
         }
 
         .article-image {
@@ -662,14 +668,23 @@
             gap: 20px;
         }
 
-        /* Tombol Share Sosial Media */
-        .social-share {
+        /* Tombol Share Sosial Media dan Text-to-Speech */
+        .meta-right-icons {
             display: flex;
             gap: 10px;
-            margin-top: 15px;
+            margin-top: 10px; /* Add some space if it wraps */
+            justify-content: flex-end; /* Align to the right */
+            flex-grow: 1; /* Allow it to take available space */
+            flex-wrap: wrap; /* Allow wrapping */
         }
 
-        .social-share a {
+        .social-share, .text-to-speech-wrapper { /* Group social share and TTS together */
+            display: flex;
+            gap: 10px; /* Space between social icons and TTS */
+            align-items: center;
+        }
+
+        .social-share a, .text-to-speech-button { /* Changed text-to-speech-share to text-to-speech-button */
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -681,10 +696,11 @@
             transition: transform 0.2s ease;
         }
 
-        .social-share a:hover {
+        .social-share a:hover, .text-to-speech-button:hover {
             transform: translateY(-2px);
         }
 
+        /* Specific colors for social media icons */
         .facebook-share {
             background-color: #3b5998;
         }
@@ -700,6 +716,12 @@
         .telegram-share {
             background-color: #0088cc;
         }
+
+        /* Color for Text-to-Speech button */
+        .text-to-speech-button {
+            background-color: var(--accent-color); /* Use accent color for TTS button */
+        }
+
 
         /* Media Queries untuk Responsif */
         @media (min-width: 600px) {
@@ -812,8 +834,7 @@
 
     <div class="desktop-nav-wrapper">
         <nav class="desktop-nav" id="desktop-main-nav">
-            <a href="index.html" id="desktop-home-btn"><i class="fas fa-home"></i><span>Home</span></a>  
-            <a href="index.html?terbaru=true" id="desktop-latest-news-btn"><i class="fas fa-fire"></i><span>Berita Terbaru</span></a>
+            <!-- Dynamic categories and Home button will be loaded here by JavaScript -->
         </nav>
     </div>
     <div class="desktop-search-icon-wrapper">
@@ -868,6 +889,11 @@
     </footer>
 
     <script>
+        // --- GLOBAL SPEECH SYNTHESIS VARIABLES ---
+        const synth = window.speechSynthesis;
+        let currentUtterance = null;
+        let isSpeaking = false;
+
         // --- FUNGSI UTILITY ---
         function getFirstImageFromContent(htmlContent) {
             if (!htmlContent) return null;
@@ -880,7 +906,12 @@
             // Hapus hanya IMG pertama
             return htmlContent.replace(/<img[^>]*?>/, '');
         }
-    
+        
+        // Function to strip HTML tags from a string
+        function stripHtml(html) {
+            let doc = new DOMParser().parseFromString(html, 'text/html');
+            return doc.body.textContent || "";
+        }
 
         function formatCategoryName(slug) {
             if (!slug || slug === 'undefined') return 'Umum';
@@ -905,28 +936,86 @@
             return element;
         }
 
-        // --- FUNGSI UNTUK MEMBUAT TOMBOL SHARE ---
-        function createSocialShareButtons(title, url) {
+        // --- FUNGSI UNTUK MEMBUAT TOMBOL SHARE + TTS ---
+        function createShareAndTtsButtons(title, url) {
             const encodedTitle = encodeURIComponent(title);
             const encodedUrl = encodeURIComponent(url);
             
             return `
-                <div class="social-share">
-                    <a href="https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}" target="_blank" class="facebook-share" title="Share ke Facebook">
-                        <i class="fab fa-facebook-f"></i>
+                <div class="meta-right-icons">
+                    <a href="#" id="text-to-speech-btn" class="text-to-speech-button" title="Dengarkan Berita">
+                        <i class="fas fa-volume-up"></i>
                     </a>
-                    <a href="https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}" target="_blank" class="twitter-share" title="Share ke Twitter">
-                        <i class="fab fa-twitter"></i>
-                    </a>
-                    <a href="https://wa.me/?text=${encodedTitle}%20${encodedUrl}" target="_blank" class="whatsapp-share" title="Share ke WhatsApp">
-                        <i class="fab fa-whatsapp"></i>
-                    </a>
-                    <a href="https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}" target="_blank" class="telegram-share" title="Share ke Telegram">
-                        <i class="fab fa-telegram-plane"></i>
-                    </a>
+                    <div class="social-share">
+                        <a href="https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}" target="_blank" class="facebook-share" title="Share ke Facebook">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}" target="_blank" class="twitter-share" title="Share ke Twitter">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="https://wa.me/?text=${encodedTitle}%20${encodedUrl}" target="_blank" class="whatsapp-share" title="Share ke WhatsApp">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
+                        <a href="https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}" target="_blank" class="telegram-share" title="Share ke Telegram">
+                            <i class="fab fa-telegram-plane"></i>
+                        </a>
+                    </div>
                 </div>
             `;
         }
+
+        // --- FUNGSI TEXT-TO-SPEECH ---
+        function toggleSpeech() {
+            const articleContentElement = document.querySelector('.article-content');
+            const ttsBtnIcon = document.querySelector('#text-to-speech-btn i');
+
+            if (!articleContentElement) {
+                console.error("Article content element not found.");
+                return;
+            }
+
+            // If speech is currently ongoing, stop it
+            if (synth.speaking) {
+                synth.cancel();
+                isSpeaking = false;
+                ttsBtnIcon.classList.remove('fa-volume-mute');
+                ttsBtnIcon.classList.add('fa-volume-up');
+                return;
+            }
+
+            // If not speaking, start new speech
+            const textToSpeak = stripHtml(articleContentElement.innerHTML);
+
+            if (textToSpeak.trim() === '') {
+                console.warn("No text to speak.");
+                return;
+            }
+
+            currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
+            currentUtterance.lang = 'id-ID'; // Set language to Indonesian
+
+            currentUtterance.onstart = () => {
+                isSpeaking = true;
+                ttsBtnIcon.classList.remove('fa-volume-up');
+                ttsBtnIcon.classList.add('fa-volume-mute');
+            };
+
+            currentUtterance.onend = () => {
+                isSpeaking = false;
+                ttsBtnIcon.classList.remove('fa-volume-mute');
+                ttsBtnIcon.classList.add('fa-volume-up');
+            };
+
+            currentUtterance.onerror = (event) => {
+                console.error('SpeechSynthesisUtterance.onerror', event);
+                isSpeaking = false;
+                ttsBtnIcon.classList.remove('fa-volume-mute');
+                ttsBtnIcon.classList.add('fa-volume-up');
+            };
+
+            synth.speak(currentUtterance);
+        }
+
 
         // --- FUNGSI LOAD DETAIL BERITA ---
         async function loadNewsDetail() {
@@ -947,22 +1036,29 @@
 
                 if (doc.exists) {
                     const news = doc.data();
-                                const cleanedContent = removeFirstImageTag(news.content);
-detailPageTitle.textContent = news.title || 'Detail Berita';
+                    const cleanedContent = removeFirstImageTag(news.content);
+                    detailPageTitle.textContent = news.title || 'Detail Berita';
 
                     const mainImageUrl = getFirstImageFromContent(news.content) || `https://picsum.photos/1200/600?random=${news.id}`;
                     const currentUrl = window.location.href;
-                    const socialShareButtons = createSocialShareButtons(news.title || 'Judul Berita', currentUrl);
+                    // Use the new combined function
+                    const shareAndTtsButtons = createShareAndTtsButtons(news.title || 'Judul Berita', currentUrl);
 
                     articleContainer.innerHTML = `
                         <h1 class="article-title">${news.title || 'Judul Berita'}</h1>
                         <p class="article-meta">
                             Oleh: ${news.editor_name || 'Petungan'} - ${news.createdAt ? news.createdAt.toDate().toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
-                            ${socialShareButtons}
+                            ${shareAndTtsButtons}
                         </p>
                         <img src="${mainImageUrl}" alt="${news.title || 'Gambar Berita'}" class="article-image">
                         <div class="article-content">${cleanedContent || '<p>Konten berita tidak tersedia.</p>'}</div>
                     `;
+
+                    // Add event listener for text-to-speech button after it's rendered
+                    document.getElementById('text-to-speech-btn').addEventListener('click', (e) => {
+                        e.preventDefault();
+                        toggleSpeech();
+                    });
 
                     // Load related news based on category
                     if (news.category) {
@@ -1095,16 +1191,57 @@ detailPageTitle.textContent = news.title || 'Detail Berita';
             }
         }
 
-        // FUNGSI BARU: Memuat kategori ke navigasi desktop
+        // Handle initial active class based on URL parameters for BOTH mobile and desktop nav
+        const activateNavButtons = (prefix) => {
+            // Remove active class from all relevant nav links first
+            document.querySelectorAll(`.${prefix}nav a`).forEach(link => link.classList.remove('active'));
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentCategorySlug = urlParams.get('kategori');
+
+            if (!urlParams.has('kategori') && !urlParams.has('cari') && !urlParams.has('terbaru')) {
+                // Activate Home button if no specific params
+                if (document.getElementById(prefix + 'home-btn')) {
+                    document.getElementById(prefix + 'home-btn').classList.add('active');
+                }
+            } else if (urlParams.has('kategori')) {
+                // Activate specific category link or "Semua Kategori" / "Kategori" fallback
+                if (currentCategorySlug && document.getElementById(`${prefix}category-${currentCategorySlug}-btn`)) {
+                    document.getElementById(`${prefix}category-${currentCategorySlug}-btn`).classList.add('active');
+                } else if (document.getElementById(`${prefix}more-menu-btn`)) { // For mobile "Kategori" button
+                    document.getElementById(`${prefix}more-menu-btn`).classList.add('active');
+                } else if (document.getElementById(`${prefix}all-categories-btn`)) { // For desktop "Semua Kategori" button
+                    document.getElementById(`${prefix}all-categories-btn`).classList.add('active');
+                } else if (document.getElementById(`${prefix}fallback-category-btn`)) { // For desktop "Kategori" fallback
+                    document.getElementById(`${prefix}fallback-category-btn`).classList.add('active');
+                }
+            } else if (urlParams.has('cari')) {
+                // Activate search button/icon
+                if (document.getElementById(prefix + 'search-news-btn')) {
+                    document.getElementById(prefix + 'search-news-btn').classList.add('active');
+                } else if (document.getElementById(`${prefix}search-news-btn-icon`)) { // For desktop search icon
+                    document.getElementById(`${prefix}search-news-btn-icon`).classList.add('active');
+                }
+            } else if (urlParams.has('terbaru')) {
+                // Activate latest news button
+                if (document.getElementById(prefix + 'latest-news-btn')) {
+                    document.getElementById(prefix + 'latest-news-btn').classList.add('active');
+                }
+            }
+        };
+
+        // FUNGSI BARU: Memuat kategori ke navigasi desktop (disesuaikan untuk detail.html)
         async function loadCategoriesForDesktopNav() {
             const desktopMainNav = document.getElementById('desktop-main-nav');
-            // Clear previous categories to prevent duplicates on re-load
-            desktopMainNav.querySelectorAll('.dynamic-category-link').forEach(el => el.remove());
-            const allCategoriesBtn = document.getElementById('desktop-all-categories-btn');
-            if (allCategoriesBtn) allCategoriesBtn.remove();
-            const fallbackCategoryBtn = document.getElementById('desktop-fallback-category-btn');
-            if (fallbackCategoryBtn) fallbackCategoryBtn.remove();
+            // Clear any existing content to ensure only desired links are present
+            desktopMainNav.innerHTML = '';
 
+            // Add Home button
+            const homeLink = document.createElement('a');
+            homeLink.href = 'index.html';
+            homeLink.id = 'desktop-home-btn';
+            homeLink.innerHTML = '<i class="fas fa-home"></i><span>Home</span>';
+            desktopMainNav.appendChild(homeLink);
 
             try {
                 const mainCategoriesSnapshot = await db.collection('kategori').orderBy('nama').get();
@@ -1120,64 +1257,57 @@ detailPageTitle.textContent = news.title || 'Detail Berita';
                     }
                 });
 
-                const maxCategoriesToShow = 6; 
+                const maxCategoriesToShow = 6;
                 let categoriesRendered = 0;
-                
-                // Tambahkan kategori spesifik
+
+                // Add specific categories
                 for (const categoryData of categoriesToAdd) {
-                    if (categoriesRendered >= maxCategoriesToShow) break; 
+                    if (categoriesRendered >= maxCategoriesToShow) break;
                     const link = document.createElement('a');
                     link.href = `index.html?kategori=${categoryData.slug}`;
-                    link.id = `desktop-category-${categoryData.slug}-btn`; 
-                    link.textContent = categoryData.nama; 
-                    link.classList.add('dynamic-category-link'); // Tambahkan kelas untuk identifikasi
-
-                    const latestNewsBtn = document.getElementById('desktop-latest-news-btn');
-                    if (latestNewsBtn) {
-                        desktopMainNav.insertBefore(link, latestNewsBtn); // Masukkan sebelum Berita Terbaru
-                    } else {
-                        desktopMainNav.appendChild(link); 
-                    }
+                    link.id = `desktop-category-${categoryData.slug}-btn`;
+                    link.textContent = categoryData.nama;
+                    link.classList.add('dynamic-category-link'); // Add class for identification
+                    desktopMainNav.appendChild(link);
                     categoriesRendered++;
                 }
 
-                // Tambahkan tombol "Semua Kategori" jika ada kategori yang tersembunyi
+                // Add "Semua Kategori" button if there are hidden categories
                 if (categoriesToAdd.length > maxCategoriesToShow) {
                     const allCategoriesLink = document.createElement('a');
-                    allCategoriesLink.href = '#'; 
+                    allCategoriesLink.href = '#';
                     allCategoriesLink.id = 'desktop-all-categories-btn';
-                    allCategoriesLink.textContent = 'Semua Kategori';
-                    allCategoriesLink.classList.add('dynamic-category-link'); // Tambahkan kelas untuk identifikasi
+                    allCategoriesLink.innerHTML = '<i class="fas fa-th-large"></i><span>Semua Kategori</span>';
+                    allCategoriesLink.classList.add('dynamic-category-link'); // Add class for identification
                     allCategoriesLink.addEventListener('click', (e) => {
                         e.preventDefault();
-                        loadCategoriesForPopup(); 
+                        loadCategoriesForPopup();
                         document.getElementById('more-menu-overlay').classList.add('visible');
                     });
-                    const latestNewsBtn = document.getElementById('desktop-latest-news-btn');
-                    if (latestNewsBtn) {
-                        desktopMainNav.insertBefore(allCategoriesLink, latestNewsBtn); // Masukkan sebelum Berita Terbaru
-                    } else {
-                        desktopMainNav.appendChild(allCategoriesLink);
-                    }
+                    desktopMainNav.appendChild(allCategoriesLink);
                 }
                 
-                // Panggil active state setelah kategori dinamis dimuat
+                // No "Berita Terbaru" button for detail page desktop nav as per request
+
+                // Activate Home button or relevant category on detail page
                 activateNavButtons('desktop-');
 
             } catch (error) {
                 console.error("Gagal memuat kategori untuk navigasi desktop:", error);
-                // Tambahkan tombol default jika gagal memuat kategori
+                // Fallback: If categories fail to load, still show Home and a generic Kategori button
                 const fallbackCategoryLink = document.createElement('a');
                 fallbackCategoryLink.href = '#';
                 fallbackCategoryLink.id = 'desktop-fallback-category-btn';
-                fallbackCategoryLink.textContent = 'Kategori'; // Teks default jika error
-                fallbackCategoryLink.classList.add('dynamic-category-link'); // Tambahkan kelas untuk identifikasi
-                const latestNewsBtn = document.getElementById('desktop-latest-news-btn');
-                if (latestNewsBtn) {
-                    desktopMainNav.insertBefore(fallbackCategoryLink, latestNewsBtn);
-                } else {
-                    desktopMainNav.appendChild(fallbackCategoryLink);
-                }
+                fallbackCategoryLink.innerHTML = '<i class="fas fa-th-large"></i><span>Kategori</span>'; // Default text if error
+                fallbackCategoryLink.classList.add('dynamic-category-link'); // Add class for identification
+                fallbackCategoryLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    loadCategoriesForPopup();
+                    document.getElementById('more-menu-overlay').classList.add('visible');
+                });
+                desktopMainNav.appendChild(fallbackCategoryLink);
+
+                activateNavButtons('desktop-');
             }
         }
 
@@ -1185,7 +1315,7 @@ detailPageTitle.textContent = news.title || 'Detail Berita';
         // --- EVENT LISTENERS ---
         document.addEventListener('DOMContentLoaded', () => {
             loadNewsDetail(); 
-            loadCategoriesForDesktopNav(); // Panggil fungsi baru ini
+            loadCategoriesForDesktopNav(); // Call this new function for detail page
 
             // Event listener untuk Navigasi Mobile (sudah ada)
             document.getElementById('mobile-home-btn').addEventListener('click', (e) => { 
@@ -1241,12 +1371,6 @@ detailPageTitle.textContent = news.title || 'Detail Berita';
             });
 
 
-            // Event listener untuk Navigasi Desktop (yang baru)
-            document.getElementById('desktop-home-btn').addEventListener('click', (e) => {
-                e.preventDefault();
-                window.location.href = 'index.html'; // Arahkan ke home
-            });
-
             // Event listener untuk tombol pencarian desktop (ikon di kanan atas)
             const desktopSearchIconBtn = document.getElementById('desktop-search-news-btn-icon'); 
             if (desktopSearchIconBtn) { 
@@ -1257,53 +1381,17 @@ detailPageTitle.textContent = news.title || 'Detail Berita';
                 });
             }
 
-            document.getElementById('desktop-latest-news-btn').addEventListener('click', (e) => {
-                e.preventDefault();
-                window.location.href = 'index.html?terbaru=true';
-            });
-
-
-            // Handle initial active class based on URL parameters for BOTH mobile and desktop nav
-            const urlParams = new URLSearchParams(window.location.search);
-            const activateNavButtons = (prefix) => {
-                document.querySelectorAll('.mobile-nav a, .desktop-nav a').forEach(link => link.classList.remove('active'));
-                const currentCategorySlug = urlParams.get('kategori');
-
-                if (!urlParams.has('kategori') && !urlParams.has('cari') && !urlParams.has('terbaru')) {
-                    if (document.getElementById(prefix + 'home-btn')) {
-                         document.getElementById(prefix + 'home-btn').classList.add('active');
-                    }
-                } else if (urlParams.has('kategori')) {
-                    // Aktifkan link kategori spesifik di desktop nav
-                    if (currentCategorySlug && document.getElementById(`${prefix}category-${currentCategorySlug}-btn`)) {
-                        document.getElementById(`${prefix}category-${currentCategorySlug}-btn`).classList.add('active');
-                    } else if (document.getElementById(`${prefix}more-menu-btn`)) { // Jika tidak ada kategori spesifik (mobile)
-                        document.getElementById(`${prefix}more-menu-btn`).classList.add('active');
-                    } else if (document.getElementById(`${prefix}all-categories-btn`)) { // Jika ada tombol "Semua Kategori" di desktop
-                        document.getElementById(`${prefix}all-categories-btn`).classList.add('active');
-                    }
-                } else if (urlParams.has('cari')) {
-                    if (document.getElementById(prefix + 'search-news-btn')) {
-                        document.getElementById(prefix + 'search-news-btn').classList.add('active');
-                    } else if (document.getElementById(`${prefix}search-news-btn-icon`)) { // Untuk ikon pencarian desktop
-                        document.getElementById(`${prefix}search-news-btn-icon`).classList.add('active');
-                    }
-                } else if (urlParams.has('terbaru')) {
-                    if (document.getElementById(prefix + 'latest-news-btn')) {
-                        document.getElementById(prefix + 'latest-news-btn').classList.add('active');
-                    }
-                }
-            };
-            activateNavButtons('mobile-'); // Untuk mobile nav
-            activateNavButtons('desktop-'); // Untuk desktop nav
-
+            // Handle initial active class based on URL parameters for mobile nav
+            activateNavButtons('mobile-'); 
+            // Desktop nav activation is called inside loadCategoriesForDesktopNav()
+            // to ensure dynamic elements are present before trying to activate them.
 
         });
 
         // SERVICE WORKER
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => { 
-                navigator.serviceWorker.register('/sw.js').then(reg => {
+                navigator.serviceWorker.register('./sw.js').then(reg => {
                     console.log('Service Worker Registered:', reg);
                 }).catch(err => {
                     console.error('Service Worker Registration Failed:', err);
