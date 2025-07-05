@@ -761,6 +761,14 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* Gaya untuk highlight TTS */
+        .tts-highlight {
+            background-color: #ffff99; /* Warna kuning muda */
+            transition: background-color 0.3s ease;
+            padding: 2px 5px; /* Sedikit padding agar tidak terlalu mepet */
+            border-radius: 3px;
+        }
+
 
         /* Media Queries untuk Responsif */
         @media (min-width: 600px) {
@@ -950,6 +958,7 @@
         let currentChunkIndex = 0; // For chunking
         let articleChunks = []; // To store text chunks
         let isPausedBySystem = false; // Flag to track if system paused TTS
+        let highlightedElement = null; // To keep track of the currently highlighted element
 
         // Function to display temporary messages to the user
         function showTemporaryMessage(message, duration = 3000) {
@@ -1109,6 +1118,11 @@
                 ttsBtnIcon.classList.remove('fa-volume-mute');
                 ttsBtnIcon.classList.add('fa-volume-up');
                 showTtsLoading(false); // Hide loading if stopped
+                // Remove any active highlight
+                if (highlightedElement) {
+                    highlightedElement.classList.remove('tts-highlight');
+                    highlightedElement = null;
+                }
                 console.log("Speech stopped.");
                 // Reset chunks and index if manually stopped
                 articleChunks = []; 
@@ -1125,12 +1139,35 @@
             // Prepare text chunks if not already prepared or if starting new speech
             // Only prepare chunks if not already speaking from a paused state
             if (articleChunks.length === 0 || currentChunkIndex >= articleChunks.length) {
-                const rawText = stripHtmlAndProcessAcronyms(articleContentElement.innerHTML);
-                // Split by sentences (period, question mark, exclamation mark followed by space or end of string)
-                // or by double newlines (paragraphs).
-                // Use a non-capturing group (?:...) for the split delimiters to not include them in the chunks.
-                articleChunks = rawText.split(/(?<=[.?!])\s+|\n\n/).filter(chunk => chunk.trim().length > 0);
+                articleChunks = []; // Reset for new article or full re-read
                 currentChunkIndex = 0;
+
+                // Iterate through all direct children of article-content (p, h1, h2, li, etc.)
+                Array.from(articleContentElement.children).forEach((childElement, index) => {
+                    // Ensure it's an element node and has some text content
+                    if (childElement.nodeType === Node.ELEMENT_NODE && childElement.textContent.trim().length > 0) {
+                        // Assign a unique ID if it doesn't have one
+                        if (!childElement.id) {
+                            childElement.id = `tts-chunk-el-${index}`;
+                        }
+                        // Get the text content, strip HTML and process acronyms
+                        const processedText = stripHtmlAndProcessAcronyms(childElement.innerHTML);
+                        
+                        // Split by sentences (period, question mark, exclamation mark followed by space or end of string)
+                        // or by double newlines (paragraphs).
+                        // Use a non-capturing group (?:...) for the split delimiters to not include them in the chunks.
+                        // Filter out empty strings from split, then trim each chunk
+                        const sentenceChunks = processedText.split(/(?<=[.?!])\s+|\n\n/).filter(chunk => chunk.trim().length > 0);
+
+                        sentenceChunks.forEach(sentence => {
+                            articleChunks.push({
+                                text: sentence.trim(),
+                                elementId: childElement.id // Reference to the parent element for highlighting
+                            });
+                        });
+                    }
+                });
+
                 console.log("Article chunks created:", articleChunks.length);
             }
 
@@ -1166,15 +1203,35 @@
 
         // Helper function to speak the next chunk of content
         function speakNextChunk(ttsBtnIcon) {
+            // Remove previous highlight before speaking new chunk
+            if (highlightedElement) {
+                highlightedElement.classList.remove('tts-highlight');
+                highlightedElement = null;
+            }
+
             if (currentChunkIndex < articleChunks.length) {
-                const textToSpeak = articleChunks[currentChunkIndex].trim(); // Trim whitespace from chunk
+                const chunkData = articleChunks[currentChunkIndex];
+                const textToSpeak = chunkData.text;
+                const targetElement = document.getElementById(chunkData.elementId);
+
                 if (textToSpeak.length === 0) { // Skip empty chunks
                     currentChunkIndex++;
                     speakNextChunk(ttsBtnIcon);
                     return;
                 }
 
-                console.log(`Speaking chunk ${currentChunkIndex + 1}/${articleChunks.length}: "${textToSpeak.substring(0, 50)}..."`); // Log first 50 chars
+                // Apply highlight to current element and scroll
+                if (targetElement) {
+                    targetElement.classList.add('tts-highlight');
+                    highlightedElement = targetElement;
+                    // Scroll into view, centered, with smooth behavior
+                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    console.warn(`Target element with ID ${chunkData.elementId} not found for highlighting. Skipping highlight for this chunk.`);
+                    // Even if element not found, we still want to speak the text
+                }
+
+                console.log(`Speaking chunk ${currentChunkIndex + 1}/${articleChunks.length}: "${textToSpeak.substring(0, Math.min(textToSpeak.length, 50))}..."`); // Log first 50 chars or less
 
                 currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
                 currentUtterance.lang = 'id-ID'; // Set language to Indonesian
@@ -1193,6 +1250,12 @@
                 };
 
                 currentUtterance.onend = () => {
+                    // Remove highlight after chunk finishes
+                    if (highlightedElement) {
+                        highlightedElement.classList.remove('tts-highlight');
+                        highlightedElement = null;
+                    }
+
                     if (!isPausedBySystem) { // Only advance chunk if not paused by system
                         currentChunkIndex++;
                     }
@@ -1216,7 +1279,7 @@
                     isSpeaking = false; // Set isSpeaking to false when paused
                     ttsBtnIcon.classList.remove('fa-volume-mute');
                     ttsBtnIcon.classList.add('fa-volume-up');
-                    // Do not advance currentChunkIndex here, as we want to resume from this chunk
+                    // Do not remove highlight here, as we are paused on this chunk
                 };
 
                 currentUtterance.onresume = (event) => {
@@ -1225,6 +1288,10 @@
                     isSpeaking = true; // Set isSpeaking to true when resumed
                     ttsBtnIcon.classList.remove('fa-volume-up');
                     ttsBtnIcon.classList.add('fa-volume-mute');
+                    // Re-apply highlight if it was removed by onpause (though it shouldn't be)
+                    if (highlightedElement && !highlightedElement.classList.contains('tts-highlight')) {
+                         highlightedElement.classList.add('tts-highlight');
+                    }
                 };
 
                 currentUtterance.onerror = (event) => {
@@ -1235,6 +1302,11 @@
                     ttsBtnIcon.classList.add('fa-volume-up');
                     showTtsLoading(false); // Hide loading on error
                     showTemporaryMessage("Gagal memutar audio. Coba lagi atau periksa pengaturan suara perangkat Anda.", 5000);
+                    // Remove any active highlight on error
+                    if (highlightedElement) {
+                        highlightedElement.classList.remove('tts-highlight');
+                        highlightedElement = null;
+                    }
                     articleChunks = []; // Reset chunks on error
                     currentChunkIndex = 0;
                 };
@@ -1245,6 +1317,11 @@
                     console.error("Error calling synth.speak() for chunk:", error);
                     showTtsLoading(false); // Hide loading on error
                     showTemporaryMessage("Terjadi kesalahan saat memulai Text-to-Speech.", 3000);
+                    // Remove any active highlight on error
+                    if (highlightedElement) {
+                        highlightedElement.classList.remove('tts-highlight');
+                        highlightedElement = null;
+                    }
                     articleChunks = []; // Reset chunks on error
                     currentChunkIndex = 0;
                 }
@@ -1254,6 +1331,11 @@
                 ttsBtnIcon.classList.remove('fa-volume-mute');
                 ttsBtnIcon.classList.add('fa-volume-up');
                 showTtsLoading(false);
+                // Ensure any final highlight is removed
+                if (highlightedElement) {
+                    highlightedElement.classList.remove('tts-highlight');
+                    highlightedElement = null;
+                }
                 articleChunks = [];
                 currentChunkIndex = 0;
             }
