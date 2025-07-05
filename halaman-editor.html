@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Editor Halaman</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+    body { font-family: 'Roboto', sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
+    .container { max-width: 900px; margin: 20px auto; background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    h1 { text-align: center; color: #2c3e50; margin-bottom: 30px;}
+    button { padding: 12px 25px; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background-color 0.3s; background-color: #3498db; color: white; }
+    button:hover { background-color: #2980b9; }
+    button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+    .form-group { margin-bottom: 25px; }
+    label { display: block; margin-bottom: 8px; font-weight: 600; }
+</style>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+<script src="https://cdn.tiny.cloud/1/fwkf69i8fn50upttpfh8h0ijlpoiqj6bh3vphbtcw1kx2ops/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+
+</head>
+<body>
+
+<div class="container">
+    <h1 id="page-title">Memuat...</h1>
+    <form id="page-form">
+        <div class="form-group">
+            <label for="content-editor">Isi Konten Halaman</label>
+            <textarea id="content-editor"></textarea>
+        </div>
+        <button type="submit" id="submit-button">Simpan Perubahan</button>
+        <a href="dashboard.html" style="margin-left: 15px; text-decoration: none; color: #3498db;">Kembali ke Dashboard</a>
+    </form>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyCNnM11tIUEl4eu5AYnObXdlDI47EZts-A",
+        authDomain: "petugan-jawa-news.firebaseapp.com",
+        projectId: "petugan-jawa-news",
+        storageBucket: "petugan-jawa-news.firebasestorage.app",
+        messagingSenderId: "928855786984",
+        appId: "1:928855786984:web:9d7f0b7a7022943895d05d",
+        measurementId: "G-DV19ZVP0KE"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    firebase.auth().onAuthStateChanged(user => { if (!user) window.location.href = 'login.html'; });
+
+    let pageId = '';
+    let pageTitle = '';
+
+    // Inisialisasi TinyMCE
+    tinymce.init({
+        selector: 'textarea#content-editor',
+        height: 600,
+        plugins: 'image link lists media table wordcount preview code paste',
+        toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | bullist numlist | link image media | code | preview',
+        setup: function(editor) {
+            // Event ini memastikan kita mengambil data setelah editor siap
+            editor.on('init', async () => {
+                const params = new URLSearchParams(window.location.search);
+                pageId = params.get('id');
+                if (!pageId) {
+                    document.body.innerHTML = '<h1>Error: ID Halaman tidak ditemukan. Kembali ke <a href="dashboard.html">Dashboard</a>.</h1>';
+                    return;
+                }
+
+                if (pageId === 'tentang') pageTitle = 'Tentang Kami';
+                else if (pageId === 'kontak') pageTitle = 'Kontak';
+                else if (pageId === 'privasi') pageTitle = 'Kebijakan Privasi';
+                
+                document.getElementById('page-title').textContent = `Edit Halaman: ${pageTitle}`;
+
+                const docRef = db.collection('halaman').doc(pageId);
+                const docSnap = await docRef.get();
+
+                if (docSnap.exists) {
+                    editor.setContent(docSnap.data().konten || '');
+                } else {
+                    console.log('Dokumen belum ada, akan dibuat saat disimpan.');
+                }
+            });
+        }
+    });
+
+    // Listener untuk form submit
+    document.getElementById('page-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!pageId || !pageTitle) {
+            alert('ID Halaman tidak valid. Tidak bisa menyimpan.');
+            return;
+        }
+
+        const submitButton = document.getElementById('submit-button');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Menyimpan...';
+
+        const content = tinymce.get('content-editor').getContent();
+        
+        try {
+            // Menggunakan .set dengan merge:true. Ini akan membuat dokumen jika belum ada, atau update jika sudah ada.
+            await db.collection('halaman').doc(pageId).set({
+                judul: pageTitle,
+                konten: content
+            }, { merge: true });
+            
+            alert('Halaman berhasil disimpan!');
+            window.location.href = 'dashboard.html';
+        } catch (error) {
+            alert('Gagal menyimpan: ' + error.message);
+            submitButton.disabled = false;
+            submitButton.textContent = 'Simpan Perubahan';
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Petungan Jawa</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #f4f7f6; }
+        .login-card { background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 320px; }
+        h1 { text-align: center; color: #2c3e50; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; }
+        input { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; }
+        button { width: 100%; padding: 12px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; }
+        button:hover { background: #2980b9; }
+        #error-message { color: red; margin-top: 10px; text-align: center; font-size: 0.9em; }
+        /* .toggle-form class dan isinya dihapus karena tidak diperlukan lagi */
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <h1 id="form-title">Login</h1>
+        <form id="auth-form">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required>
+            </div>
+            <button type="submit" id="submit-button">Login</button>
+            <p id="error-message"></p>
+        </form>
+        </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+  apiKey: "AIzaSyCNnM11tIUEl4eu5AYnObXdlDI47EZts-A",
+  authDomain: "petugan-jawa-news.firebaseapp.com",
+  projectId: "petugan-jawa-news",
+  storageBucket: "petugan-jawa-news.firebasestorage.app",
+  messagingSenderId: "928855786984",
+  appId: "1:928855786984:web:9d7f0b7a7022943895d05d",
+  measurementId: "G-DV19ZVP0KE"
+};
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        const authForm = document.getElementById('auth-form');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const errorMessage = document.getElementById('error-message');
+        // const toggleLink dan toggleText dihapus karena tidak diperlukan lagi
+        const formTitle = document.getElementById('form-title');
+        const submitButton = document.getElementById('submit-button');
+        // Variabel isLoginMode tidak lagi diperlukan karena hanya ada mode login
+
+        authForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            errorMessage.textContent = '';
+
+            // Proses Login (hanya mode login yang dipertahankan)
+            auth.signInWithEmailAndPassword(email, password)
+                .then(userCredential => {
+                    // Jika sukses, arahkan ke halaman utama
+                    window.location.href = 'index.html';
+                })
+                .catch(error => {
+                    errorMessage.textContent = 'Gagal login: ' + error.message;
+                });
+        });
+    </script>
+</body>
+</html>

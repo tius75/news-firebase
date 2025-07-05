@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Petungan Jawa</title>
+    <link rel="manifest" href="./manifest-dashboard.json">
+    <meta name="theme-color" content="#2c3e50">
+    <link rel="apple-touch-icon" href="logo192.png">
+    <link rel="icon" type="image/png" href="favicon32x.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCNnM11tIUEl4eu5AYnObXdlDI47EZts-A",
+            authDomain: "petugan-jawa-news.firebaseapp.com",
+            projectId: "petugan-jawa-news",
+            storageBucket: "petugan-jawa-news.firebasestorage.app",
+            messagingSenderId: "928855786984",
+            appId: "1:928855786984:web:9d7f0b7a7022943895d05d",
+            measurementId: "G-DV19ZVP0KE"
+        };
+        firebase.initializeApp(firebaseConfig);
+        firebase.auth().onAuthStateChanged(user => { if (!user) window.location.href = 'login.html'; });
+    </script>
+    
+    <style>
+        body{font-family:'Roboto',sans-serif;margin:0;background-color:#f4f7f6;color:#333}
+        .container{max-width:1000px;margin:20px auto;padding:20px}
+        h1,h2{text-align:center;color:#2c3e50}
+        .card{background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1);margin-bottom:30px}
+        .controls{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:20px;gap:10px}
+        .button{display:inline-block;padding:10px 20px;color:white;text-decoration:none;border-radius:5px;border:none;font-family:'Roboto',sans-serif;font-size:1em;cursor:pointer;text-align:center;}
+        .add-btn{background-color:#3498db}.footer-btn{background-color:#9b59b6}.logout-btn{background-color:#e74c3c}.page-btn{background-color:#16a085}
+        .news-table, .html-page-table{width:100%;border-collapse:collapse;margin-bottom:20px;}.news-table th,.news-table td, .html-page-table th, .html-page-table td{border:1px solid #ddd;padding:12px;text-align:left;vertical-align:middle}.news-table th, .html-page-table th{background-color:#ecf0f1}
+        .actions a,.actions button{text-decoration:none;padding:6px 10px;border-radius:4px;margin-right:5px;font-size:.9em;color:#fff;border:none;cursor:pointer}
+        .edit-btn{background-color:#f1c40f}.delete-btn{background-color:#e74c3c}
+        .page-management-buttons { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
+        #category-manager-container { display: flex; flex-direction: column; gap: 20px; }
+        .category-card { border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; }
+        .category-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .category-header h3 { margin: 0; font-size: 1.2em; color: #2c3e50; }
+        .subcategory-list { list-style: none; padding: 0; margin: 0 0 15px 0; }
+        .subcategory-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; background-color: #f9f9f9; border-radius: 4px; margin-bottom: 5px; }
+        .subcategory-item span { font-size: 0.9em; }
+        .subcategory-item .slug { color: #7f8c8d; font-size: 0.8em; margin-left: 10px; }
+        .add-subcategory-form { display: flex; gap: 10px; flex-wrap: wrap; }
+        .add-subcategory-form input { flex: 1; min-width: 150px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .add-subcategory-form button { background-color: #3498db; }
+        #add-main-category-form { display:flex; gap:10px; margin-top: 20px; }
+        #add-main-category-form input { flex-grow:1;padding:10px;border:1px solid #ccc;border-radius:5px }
+        #add-main-category-form button{ background:#2ecc71; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Dashboard Manajemen</h1>
+        <div class="controls">
+            <div>
+                <a href="index.html" target="_blank" class="button add-btn">Lihat Situs</a>
+                <a href="cms-fix.html" class="button add-btn">Tambah Berita Baru</a> <a href="html-editor.html" class="button footer-btn">Buat Halaman HTML Baru</a>
+            </div>
+            <button id="logout-btn" class="button logout-btn">Logout</button>
+        </div>
+
+        <div class="card">
+            <h2>Manajemen Halaman HTML Khusus</h2>
+             <table class="html-page-table">
+                <thead><tr><th>Judul Halaman</th><th>URL Publik</th><th>Aksi</th></tr></thead>
+                <tbody id="html-pages-list-body"></tbody>
+            </table>
+        </div>
+        
+        <div class="card">
+            <h2>Daftar Berita</h2>
+            <table class="news-table">
+                <thead><tr><th>Judul Berita</th><th>Kategori</th><th>Tanggal</th><th>Aksi</th></tr></thead>
+                <tbody id="news-list-body"></tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>Manajemen Kategori</h2>
+            <div id="category-manager-container"></div>
+            <form id="add-main-category-form">
+                <input type="text" id="new-main-category-name" placeholder="Nama Kategori Utama Baru" required>
+                <input type="text" id="new-main-category-slug" placeholder="slug-url (auto)" readonly>
+                <button type="submit" class="button">Tambah Kategori Utama</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const db = firebase.firestore();
+        const FieldValue = firebase.firestore.FieldValue;
+
+        function createSlug(text) {
+            if (!text) return '';
+            return text.toString().toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
+        }
+
+        async function loadNews() {
+            const tbody = document.getElementById('news-list-body');
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Memuat berita...</td></tr>';
+            try {
+                const snapshot = await db.collection('berita').orderBy('createdAt', 'desc').get();
+                if (snapshot.empty) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Belum ada berita.</td></tr>'; return;
+                }
+                tbody.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const news = doc.data();
+                    const date = news.createdAt ? news.createdAt.toDate().toLocaleDateString('id-ID') : 'N/A';
+                    const title = news.title || '[Tanpa Judul]';
+                    const category = news.category || '[Tanpa Kategori]';
+                    const row = document.createElement('tr');
+                    // Link Edit berita sekarang mengarah ke "cms-fix.html"
+                    row.innerHTML = `<td>${title} ${news.part || ''}</td><td>${category}</td><td>${date}</td><td class="actions"><a href="cms-fix.html?editId=${doc.id}" class="edit-btn">Edit</a><button class="delete-btn news-delete-btn" data-id="${doc.id}">Hapus</button></td>`;
+                    tbody.appendChild(row);
+                });
+            } catch (error) { console.error("Error loading news:", error); }
+        }
+
+        async function loadCategoriesForAdmin() {
+            const container = document.getElementById('category-manager-container');
+            container.innerHTML = '<div>Memuat kategori...</div>';
+            try {
+                const snapshot = await db.collection('kategori').orderBy('nama').get(); // Order by nama untuk tampilan yang konsisten
+                if (snapshot.empty) {
+                    container.innerHTML = '<div>Belum ada kategori.</div>'; return;
+                }
+                container.innerHTML = '';
+                
+                snapshot.forEach(doc => {
+                    const category = doc.data(); 
+                    const categoryId = doc.id;
+                    const card = document.createElement('div'); 
+                    card.className = 'category-card';
+                    
+                    let subcategoryHTML = '';
+                    if (category.subkategori && Array.isArray(category.subkategori) && category.subkategori.length > 0) {
+                        const sortedSubcategories = category.subkategori.sort((a, b) => (a.nama_sub || '').localeCompare(b.nama_sub || ''));
+                        sortedSubcategories.forEach(sub => { 
+                            subcategoryHTML += `<li class="subcategory-item" data-slug="${sub.slug}">
+                                <div><span>${sub.nama_sub}</span><span class="slug">(${sub.slug || 'slug-kosong'})</span></div>
+                                <button class="delete-btn subcategory-delete-btn" data-main-id="${categoryId}" data-sub-slug="${sub.slug}">Hapus</button>
+                            </li>`; 
+                        });
+                    } else { 
+                        subcategoryHTML = '<li>Belum ada sub-kategori.</li>'; 
+                    }
+
+                    card.innerHTML = `
+                        <div class="category-header">
+                            <h3>${category.nama} <span class="slug">(${category.slug || 'slug-kosong'})</span></h3>
+                            <button class="delete-btn main-category-delete-btn" data-id="${categoryId}">Hapus</button>
+                        </div>
+                        <ul class="subcategory-list">${subcategoryHTML}</ul>
+                        <form class="add-subcategory-form" data-id="${categoryId}">
+                            <input type="text" class="new-subcategory-name" placeholder="Nama Sub-kategori" required>
+                            <input type="text" class="new-subcategory-slug" placeholder="slug-url (auto)" readonly> <button type="submit" class="button">Tambah Sub</button>
+                        </form>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (error) { console.error("Error loading categories:", error); }
+        }
+
+        async function loadHtmlPages() {
+            const tbody = document.getElementById('html-pages-list-body');
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Memuat halaman...</td></tr>';
+            try {
+                const snapshot = await db.collection('halaman_khusus').orderBy('judul').get(); // Order by judul untuk konsistensi
+                if (snapshot.empty) {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Belum ada halaman HTML khusus.</td></tr>'; return;
+                }
+                tbody.innerHTML = '';
+                
+                snapshot.forEach(doc => {
+                    const page = doc.data();
+                    const pageUrl = `lihat.html?slug=${page.slug}`;
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${page.judul}</td><td><a href="${pageUrl}" target="_blank">${page.slug}</a></td><td class="actions"><a href="html-editor.html?id=${doc.id}" class="edit-btn">Edit</a><button class="delete-btn html-page-delete-btn" data-id="${doc.id}">Hapus</button></td>`;
+                    tbody.appendChild(row);
+                });
+            } catch (error) { console.error("Error loading special pages:", error); }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            loadNews();
+            loadCategoriesForAdmin();
+            loadHtmlPages();
+            
+            document.getElementById('logout-btn').addEventListener('click', () => { if(confirm('Yakin ingin keluar?')) { firebase.auth().signOut().then(() => window.location.href = 'login.html'); }});
+            
+            // Logika untuk mengisi slug kategori utama secara otomatis
+            const newMainCategoryNameInput = document.getElementById('new-main-category-name');
+            const newMainCategorySlugInput = document.getElementById('new-main-category-slug');
+            newMainCategoryNameInput.addEventListener('input', () => {
+                newMainCategorySlugInput.value = createSlug(newMainCategoryNameInput.value);
+            });
+
+            document.getElementById('add-main-category-form').addEventListener('submit', async e => {
+                e.preventDefault(); 
+                const newCategoryName = newMainCategoryNameInput.value.trim();
+                const newCategorySlug = newMainCategorySlugInput.value.trim(); // Gunakan slug yang otomatis terisi
+
+                if(newCategoryName && newCategorySlug) { 
+                    await db.collection('kategori').add({ nama: newCategoryName, slug: newCategorySlug, subkategori: [] }); // Simpan slug dan array subkategori kosong
+                    newMainCategoryNameInput.value = ''; 
+                    newMainCategorySlugInput.value = '';
+                    loadCategoriesForAdmin(); 
+                } else {
+                    alert('Nama dan Slug Kategori Utama tidak boleh kosong!');
+                }
+            });
+
+            const categoryContainer = document.getElementById('category-manager-container');
+            categoryContainer.addEventListener('click', async e => {
+                if (e.target.matches('.main-category-delete-btn')) { 
+                    if (confirm('Yakin ingin menghapus kategori utama ini beserta sub-kategorinya (jika ada)?')) { 
+                        await db.collection('kategori').doc(e.target.dataset.id).delete(); 
+                        loadCategoriesForAdmin(); 
+                    }
+                }
+                if (e.target.matches('.subcategory-delete-btn')) {
+                    if (confirm('Yakin ingin menghapus sub-kategori ini?')) {
+                        const mainId = e.target.dataset.mainId; 
+                        const subSlugToDelete = e.target.dataset.subSlug; // Menggunakan data-sub-slug
+                        
+                        // Ambil dokumen utama
+                        const docRef = db.collection('kategori').doc(mainId);
+                        const docSnap = await docRef.get();
+                        
+                        if (docSnap.exists) {
+                            const currentSubkategori = docSnap.data().subkategori || [];
+                            // Filter subkategori yang ingin dihapus berdasarkan slug
+                            const updatedSubkategori = currentSubkategori.filter(sub => sub.slug !== subSlugToDelete);
+                            await docRef.update({ subkategori: updatedSubkategori });
+                            loadCategoriesForAdmin();
+                        }
+                    }
+                }
+            });
+
+            categoryContainer.addEventListener('submit', async e => {
+                if (e.target.matches('.add-subcategory-form')) {
+                    e.preventDefault(); 
+                    const mainId = e.target.dataset.id;
+                    const nameInput = e.target.querySelector('.new-subcategory-name'); 
+                    const slugInput = e.target.querySelector('.new-subcategory-slug'); // Input slug subkategori
+
+                    const newSubName = nameInput.value.trim(); 
+                    if(!newSubName) {
+                        alert('Nama Sub-kategori kosong!');
+                        return;
+                    }
+                    
+                    let newSlug = slugInput.value.trim(); 
+                    if (!newSlug) { 
+                        newSlug = createSlug(newSubName); 
+                    }
+
+                    // Ambil dokumen utama untuk append subkategori
+                    const docRef = db.collection('kategori').doc(mainId);
+                    const docSnap = await docRef.get();
+
+                    if (docSnap.exists) {
+                        const currentSubkategori = docSnap.data().subkategori || [];
+                        const isDuplicate = currentSubkategori.some(sub => sub.slug === newSlug);
+
+                        if (isDuplicate) {
+                            alert('Slug sub-kategori sudah ada di kategori ini!');
+                            return;
+                        }
+
+                        // Tambahkan slug ke objek subkategori
+                        await docRef.update({ 
+                            subkategori: FieldValue.arrayUnion({ nama_sub: newSubName, slug: newSlug }) 
+                        });
+                        nameInput.value = ''; 
+                        slugInput.value = ''; 
+                        loadCategoriesForAdmin();
+                    } else {
+                        alert('Kategori utama tidak ditemukan!');
+                    }
+                }
+            });
+            
+            // Otomatisasi slug untuk sub-kategori
+            categoryContainer.addEventListener('input', (e) => {
+                if (e.target.matches('.new-subcategory-name')) {
+                    const form = e.target.closest('.add-subcategory-form');
+                    const slugInput = form.querySelector('.new-subcategory-slug');
+                    slugInput.value = createSlug(e.target.value);
+                }
+            });
+
+
+            document.querySelector('#news-list-body').addEventListener('click', async e => { if (e.target.matches('.news-delete-btn')) { if (confirm('Yakin?')) { await db.collection('berita').doc(e.target.dataset.id).delete(); loadNews(); } } });
+            document.querySelector('#html-pages-list-body').addEventListener('click', async e => { if (e.target.matches('.html-page-delete-btn')) { if (confirm('Yakin?')) { await db.collection('halaman_khusus').doc(e.target.dataset.id).delete(); loadHtmlPages(); } } });
+        });
+    </script>
+</body>
+</html>

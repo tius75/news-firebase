@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CMS Petungan Jawa - Editor Lengkap</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+    :root{--primary-color:#2c3e50;--secondary-color:#3498db;--accent-color:#e74c3c;--light-color:#ecf0f1;--dark-color:#2c3e50}body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background-color:var(--light-color);color:var(--dark-color);margin:0;padding:20px;min-height:100vh}.container{max-width:900px;margin:0 auto;background:white;border-radius:10px;padding:25px;box-shadow:0 5px 15px rgba(0,0,0,0.1)}.form-group{margin-bottom:25px}label{display:block;margin-bottom:8px;font-weight:600;color:var(--primary-color)}input,select,textarea{width:100%;padding:12px 15px;border:1px solid #ddd;border-radius:6px;font-size:16px;box-sizing:border-box}.button-group{display:flex;gap:15px;margin-top:20px}button{padding:12px 25px;border:none;border-radius:6px;font-size:16px;font-weight:600;cursor:pointer;transition:all .3s;flex:1}.btn-primary{background-color:var(--secondary-color);color:white}.btn-secondary{background-color:#bdc3c7;color:white}.btn-primary:hover{background-color:#2980b9}
+    .headline-checkbox { display: flex; align-items: center; background-color: #fff8e1; padding: 15px; border-radius: 6px; border: 1px solid #ffecb3; }
+    .headline-checkbox input { width: auto; margin-right: 12px; transform: scale(1.2); }
+    .headline-checkbox label { margin: 0; font-weight: normal; cursor: pointer;}
+</style>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+<script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
+<script src="https://cdn.tiny.cloud/1/fwkf69i8fn50upttpfh8h0ijlpoiqj6bh3vphbtcw1kx2ops/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+
+</head>
+<body>
+
+<div class="container">
+    <h1 id="page-title">Formulir Berita</h1>
+    <form id="news-form">
+        <div class="form-group"><label for="title">Judul Berita</label><input id="title" required type="text"/></div>
+        <div class="form-group"><label for="part">Bagian / Jilid (Opsional)</label><input id="part" type="text" placeholder="Contoh: Bagian 1, atau biarkan kosong"></div>
+        <div class="form-group"><label for="position">Posisi Tampil</label><select id="position" required><option value="grid">Grid (Normal)</option><option value="list">List (2 Kolom)</option></select></div>
+        <div class="form-group"><label for="category-select">Kategori Berita</label><select id="category-select" required><option value="">-- Pilih Sub-kategori --</option></select></div>
+        <div class="form-group"><label for="editor_name">Nama Editor</label><input id="editor_name" required type="text"/></div>
+        <div class="form-group">
+            <div class="headline-checkbox">
+                <input type="checkbox" id="is-headline">
+                <label for="is-headline">Jadikan Headline Utama? (Akan menggantikan headline yang lama)</label>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="keywords-input">Kata Kunci (Dipisahkan koma, contoh: energi, aura, hipnoterapi)</label>
+            <textarea id="keywords-input" rows="3" placeholder="Masukkan kata kunci relevan dipisahkan koma"></textarea>
+            <small style="color: #777;">Ini akan digunakan untuk fungsi pencarian. Gunakan huruf kecil.</small>
+        </div>
+        <div class="form-group"><label for="content-editor">Isi Berita</label><textarea id="content-editor"></textarea></div>
+        <div class="button-group"><button class="btn-primary" type="submit" id="submit-button">Kirim Berita</button><button class="btn-secondary" id="reset-button" type="button">Reset Form</button></div>
+        <a href="dashboard.html" style="display: block; text-align: center; margin-top: 20px;">Kembali ke Dashboard</a>
+    </form>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyCNnM11tIUEl4eu5AYnObXdlDI47EZts-A",
+        authDomain: "petugan-jawa-news.firebaseapp.com",
+        projectId: "petugan-jawa-news",
+        storageBucket: "petugan-jawa-news.firebasestorage.app",
+        messagingSenderId: "928855786984",
+        appId: "1:928855786984:web:9d7f0b7a7022943895d05d",
+        measurementId: "G-DV19ZVP0KE"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const FieldValue = firebase.firestore.FieldValue;
+    firebase.auth().onAuthStateChanged(user => { if (!user) window.location.href = 'login.html'; });
+
+    tinymce.init({
+        selector: 'textarea#content-editor',
+        plugins: 'image link lists media table wordcount preview code paste',
+        toolbar: 'undo redo | paste pastetext | blocks | bold italic | alignleft aligncenter alignright | bullist numlist | link image media | code | preview',
+        height: 500,
+        paste_as_text: true,
+        image_title: true,
+        automatic_uploads: true,
+        file_picker_types: 'image',
+        file_picker_callback: (cb, value, meta) => {
+            const myWidget = cloudinary.createUploadWidget({
+                cloudName: 'dhvcpzl5w', 
+                uploadPreset: 'petungan-news'
+            }, (error, result) => { 
+                if (!error && result && result.event === "success") { 
+                    cb(result.info.secure_url, { title: result.info.original_filename });
+                }
+            });
+            myWidget.open();
+        }
+    });
+
+    async function loadHierarchicalCategories(selectedSlug = null) {
+        const selectElement = document.getElementById('category-select');
+        selectElement.innerHTML = '<option value="">Memuat...</option>';
+        try {
+            const snapshot = await db.collection('kategori').orderBy('nama').get();
+            if (snapshot.empty) {
+                selectElement.innerHTML = '<option value="">Belum ada kategori. Buat di Dashboard.</option>';
+                return;
+            }
+            selectElement.innerHTML = '<option value="">-- Pilih Kategori --</option>'; // Ubah teks default
+            snapshot.forEach(doc => {
+                const categoryData = doc.data();
+                // Memastikan categoryData.slug ada dan bukan null/undefined
+                if (categoryData.slug && categoryData.nama) { // Menambahkan kategori utama ke dropdown
+                    const option = document.createElement('option');
+                    option.value = categoryData.slug;
+                    option.textContent = categoryData.nama;
+                    if (categoryData.slug === selectedSlug) option.selected = true;
+                    selectElement.appendChild(option);
+                }
+
+                if (categoryData.subkategori && Array.isArray(categoryData.subkategori) && categoryData.subkategori.length > 0) {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = "Subkategori " + categoryData.nama; // Tambah label "Subkategori" untuk kejelasan
+                    categoryData.subkategori.forEach(sub => {
+                        // Memastikan sub.slug dan sub.nama_sub ada dan bukan null/undefined
+                        if (sub.slug && sub.nama_sub) {
+                            const option = document.createElement('option');
+                            option.value = sub.slug;
+                            option.textContent = " - " + sub.nama_sub; // Indentasi untuk kejelasan
+                            if (sub.slug === selectedSlug) option.selected = true;
+                            optgroup.appendChild(option);
+                        }
+                    });
+                    if (optgroup.children.length > 0) { // Hanya tambahkan optgroup jika ada subkategori yang valid
+                        selectElement.appendChild(optgroup);
+                    }
+                }
+            });
+        } catch (error) { 
+            console.error("Gagal memuat kategori: ", error);
+            selectElement.innerHTML = '<option value="">Gagal memuat kategori.</option>';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const params = new URLSearchParams(window.location.search);
+        const editId = params.get('editId');
+        
+        const initEditorAndLoadData = async (data = null) => {
+            const editor = tinymce.get('content-editor');
+            if (editor && editor.initialized) {
+                if(data) {
+                    editor.setContent(data.content || '');
+                    // Muat keywords ke input manual
+                    document.getElementById('keywords-input').value = (data.keywords && Array.isArray(data.keywords)) ? data.keywords.join(', ') : '';
+                }
+                await loadHierarchicalCategories(data ? data.category : null);
+            } else {
+                tinymce.on('init', () => {
+                     const editor = tinymce.get('content-editor');
+                     if(data) {
+                         editor.setContent(data.content || '');
+                         // Muat keywords ke input manual
+                         document.getElementById('keywords-input').value = (data.keywords && Array.isArray(data.keywords)) ? data.keywords.join(', ') : '';
+                     }
+                     loadHierarchicalCategories(data ? data.category : null);
+                });
+            }
+        };
+
+        if (editId) {
+            document.getElementById('page-title').textContent = "Edit Berita";
+            document.getElementById('submit-button').textContent = "Update Berita";
+            const docRef = db.collection('berita').doc(editId);
+            const docSnap = await docRef.get();
+
+            if (docSnap.exists) {
+                const data = docSnap.data();
+                document.getElementById('title').value = data.title || '';
+                document.getElementById('part').value = data.part || '';
+                document.getElementById('position').value = data.position || 'grid';
+                document.getElementById('editor_name').value = data.editor_name || '';
+                document.getElementById('is-headline').checked = data.isHeadline || false;
+                initEditorAndLoadData(data);
+            } else {
+                alert('Berita dengan ID ini tidak ditemukan!');
+                await loadHierarchicalCategories();
+            }
+        } else {
+             await loadHierarchicalCategories();
+        }
+    });
+
+    document.getElementById('news-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitButton = document.getElementById('submit-button');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Menyimpan...';
+
+        const editId = new URLSearchParams(window.location.search).get('editId');
+        const makeHeadline = document.getElementById('is-headline').checked;
+        const categorySlug = document.getElementById('category-select').value;
+        const manualKeywords = document.getElementById('keywords-input').value.trim(); // Ambil nilai dari input keywords manual
+
+        if (!categorySlug) {
+            alert('Silakan pilih kategori berita!'); 
+            submitButton.disabled = false;
+            submitButton.textContent = editId ? 'Update Berita' : 'Kirim Berita';
+            return;
+        }
+
+        const newsData = {
+            title: document.getElementById('title').value.trim(),
+            part: document.getElementById('part').value.trim(),
+            position: document.getElementById('position').value,
+            category: categorySlug,
+            editor_name: document.getElementById('editor_name').value.trim(),
+            content: tinymce.get('content-editor').getContent(),
+            isHeadline: makeHeadline
+        };
+        
+        // --- LOGIKA GENERASI KEYWORDS YANG DIPERBARUI (Prioritas Manual) ---
+        let finalKeywords = [];
+        if (manualKeywords) {
+            // Jika ada input manual, gunakan itu
+            finalKeywords = manualKeywords.toLowerCase().split(',').map(k => k.trim()).filter(k => k !== '');
+            // Hapus duplikasi jika ada
+            finalKeywords = [...new Set(finalKeywords)];
+        } else {
+            // Jika input manual kosong, gunakan otomatisasi
+            const allKeywords = new Set();
+            newsData.title.toLowerCase().split(/\s+/).forEach(word => { if (word) allKeywords.add(word); });
+            if (newsData.part) newsData.part.toLowerCase().split(/\s+/).forEach(word => { if (word) allKeywords.add(word); });
+            if (newsData.category) newsData.category.split('-').forEach(word => { if (word) allKeywords.add(word); });
+            
+            // Ambil teks dari TinyMCE, pisahkan menjadi kata, tambahkan ke set
+            const contentText = tinymce.get('content-editor').getContent({ format: 'text' });
+            if (contentText) {
+                contentText.toLowerCase().split(/\s+/).forEach(word => {
+                    const cleanWord = word.replace(/[^\w]/g, ''); 
+                    if (cleanWord.length > 2) allKeywords.add(cleanWord); 
+                });
+            }
+            finalKeywords = Array.from(allKeywords);
+        }
+        newsData.keywords = finalKeywords; // Simpan array keywords yang sudah jadi
+        // --- AKHIR LOGIKA GENERASI KEYWORDS ---
+
+        try {
+            if (makeHeadline) {
+                await db.runTransaction(async (transaction) => {
+                    const headlineQuery = db.collection('berita').where('isHeadline', '==', true);
+                    const currentHeadlines = await transaction.get(headlineQuery);
+                    currentHeadlines.forEach(doc => {
+                        if (doc.id !== editId) { transaction.update(doc.ref, { isHeadline: false }); }
+                    });
+                    if (editId) {
+                        transaction.update(db.collection('berita').doc(editId), newsData);
+                    } else {
+                        newsData.createdAt = FieldValue.serverTimestamp();
+                        const newDocRef = db.collection('berita').doc();
+                        transaction.set(newDocRef, newsData);
+                    }
+                });
+            } else {
+                if (editId) {
+                    await db.collection('berita').doc(editId).update(newsData);
+                } else {
+                    newsData.createdAt = FieldValue.serverTimestamp();
+                    await db.collection('berita').add(newsData);
+                }
+            }
+
+            if (editId) {
+                await db.collection('berita').doc(editId).update({
+                    lastUpdatedAt: FieldValue.serverTimestamp()
+                });
+            }
+
+            alert('Berita berhasil disimpan!');
+            window.location.href = 'dashboard.html';
+        } catch (error) { 
+            alert('Terjadi kesalahan: ' + error.message); 
+            console.error("Error saving news:", error); 
+            submitButton.disabled = false;
+        }
+    });
+    
+    document.getElementById('reset-button').addEventListener('click', () => {
+        document.getElementById('news-form').reset();
+        tinymce.get('content-editor').setContent('');
+        document.getElementById('keywords-input').value = ''; // Reset keywords input juga
+    });
+</script>
+</body>
+</html>

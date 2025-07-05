@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Petungan</title>
+    <meta name="google-site-verification" content="r9HbWiPpcz2-xzzSvWefR0PzDa3_klCAfTfxV5AiwOY" />
+
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5922983068453797"
+        crossorigin="anonymous"></script>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-MD4XVV58');</script>
+    <!-- End Google Tag Manager -->
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <script>
+        // Konfigurasi Firebase Anda
+        const firebaseConfig = {
+            apiKey: "AIzaSyCNnM11tIUEl4eu5AYTObXdlDI47EZts-A", // Ganti dengan API Key Anda
+            authDomain: "petugan-jawa-news.firebaseapp.com",
+            projectId: "petugan-jawa-news",
+            storageBucket: "petugan-jawa-news.appspot.com",
+            messagingSenderId: "928855786984",
+            appId: "1:928855786984:web:9d7f0b7a7022943895d05d",
+            measurementId: "G-DV19ZVP0KE"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Cabin:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <meta name="theme-color" content="#2c3e50"/>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="logo.png">
+    <!-- Favicon correction: rel="icon" is the correct attribute -->
+    <link rel="icon" href="favicon.png">
+
+    <style>
+        /* Variabel CSS untuk tema */
+        :root {
+            --primary-font: 'Roboto', sans-serif;
+            --heading-font: 'Merriweather', serif;
+            --text-color: #333;
+            --background-color: #f4f4f4;
+            --header-bg: #fff;
+            --card-bg: #fff;
+            --accent-color: #8B4513; /* Warna Coklat */
+            --light-grey: #eee;
+            --dark-grey: #777;
+        }
+
+        /* Reset dan Box Sizing */
+        html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            height: auto;
+            min-height: 100%;
+            font-family: var(--primary-font);
+            margin: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            padding-top: 70px; /* Ruang untuk header yang fixed */
+            padding-bottom: 120px; /* Ruang untuk navigasi mobile yang fixed + footer */
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* Header Situs (Tetap di atas) */
+        .site-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 15px;
+            background-color: var(--header-bg);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            height: 50px;
+        }
+
+        .site-header .logo {
+            width: 50px;
+            height: 50px;
+            margin-right: 12px;
+        }
+
+        .site-header .site-title {
+            font-family: var(--heading-font);
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        /* Kontainer Berita Utama */
+        .news-feed {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-height: 300px;
+        }
+
+        /* Gaya Kartu Berita Dasar */
+        .news-item-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .news-item-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .news-item-card .news-image {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+            background-color: var(--light-grey);
+            display: block;
+        }
+
+        .news-item-card .news-content {
+            padding: 15px;
+        }
+
+        .news-item-card .news-title {
+            font-family: var(--heading-font);
+            line-height: 1.4;
+            margin: 8px 0;
+            color: var(--text-color);
+        }
+
+        .news-item-card .news-meta {
+            font-size: 0.8em;
+            color: var(--dark-grey);
+            margin-top: 8px;
+            margin-bottom: 0;
+        }
+
+        /* ============================================== */
+        /* Gaya Spesifik untuk Berbagai Tata Letak Berita */
+        /* ============================================== */
+
+        /* HERO LIST ITEM (Artikel pertama dengan ukuran besar) */
+        .hero-list-item {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 0;
+        }
+        .hero-list-item .news-image {
+            height: 250px;
+        }
+        .hero-list-item .news-content {
+            padding: 15px;
+        }
+        .hero-list-item .news-title {
+            font-size: 1.6rem;
+        }
+        .hero-list-item .news-excerpt {
+            font-size: 1em;
+            color: var(--text-color);
+            line-height: 1.6;
+            margin-top: 5px;
+        }
+
+        /* NEWS LIST ITEM (2 kolom untuk item daftar yang lebih kecil) */
+        .news-list-item-wrapper {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        .news-list-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 0;
+        }
+        .news-list-item .news-image {
+            width: 120px;
+            height: 120px;
+            flex-shrink: 0;
+            border-radius: 4px;
+        }
+        .news-list-item .news-content {
+            padding: 15px;
+            flex-grow: 1;
+        }
+        .news-list-item .news-title {
+            font-size: 1.1rem;
+            margin-top: 0;
+            margin-bottom: 5px;
+        }
+
+        /* NEWS GRID (3 kolom untuk sebagian besar artikel) */
+        .news-grid-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        .news-grid .news-image {
+            aspect-ratio: 16 / 9;
+            height: auto;
+            border-radius: 8px 8px 0 0;
+        }
+        .news-grid .news-title {
+            font-size: 1rem;
+            margin-top: 0;
+            margin-bottom: 5px;
+        }
+
+        /* ============================================== */
+        /* Pembungkus untuk Navigasi Mobile (Fixed di bagian bawah) */
+        /* ============================================== */
+        #nav-wrapper {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 65px;
+            background-color: var(--header-bg);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 1001;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: none;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+        }
+
+        .mobile-nav {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .mobile-nav a {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            color: #555;
+            font-size: .75rem;
+            gap: 4px;
+            height: 100%;
+        }
+
+        .mobile-nav a.active {
+            color: var(--accent-color);
+        }
+
+        /* Navigasi Desktop */
+        .desktop-nav-wrapper {
+            display: none; /* Sembunyikan secara default di mobile */
+            background-color: var(--header-bg);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 20px; /* Jarak antara nav dan konten */
+            padding: 0 15px; /* Padding horizontal */
+            position: sticky; /* Sticky di desktop */
+            top: 70px; /* Di bawah header (50px) + sedikit jarak */
+            z-index: 999; /* Di bawah header, di atas konten */
+            border-radius: 8px; /* Border radius */
+        }
+        .desktop-nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: flex-start; /* Pindah ke kiri */
+            align-items: center;
+            height: 50px; /* Tinggi navigasi desktop */
+            /* Sesuaikan jarak antar item nav */
+            gap: 25px; /* Meningkatkan jarak antar item nav untuk tampilan yang lebih bersih */
+        }
+        .desktop-nav a {
+            display: flex;
+            align-items: center;
+            padding: 10px 0; /* Mengurangi padding horizontal karena gap sudah diatur */
+            color: #555;
+            font-size: 0.95rem;
+            font-weight: 500;
+            gap: 8px;
+            transition: color 0.2s ease, background-color 0.2s ease;
+            border-radius: 4px;
+            white-space: nowrap; /* Pastikan teks tidak pecah baris */
+        }
+        .desktop-nav a:hover {
+            color: var(--accent-color);
+            background-color: transparent; /* Hapus background-color saat hover untuk tampilan yang lebih bersih */
+        }
+        .desktop-nav a.active {
+            color: var(--accent-color);
+        }
+        /* Search Icon di Desktop Nav (pindah ke kanan atas) */
+        .desktop-search-icon-wrapper {
+            display: none; /* Sembunyikan secara default */
+            position: absolute; /* Posisi absolut */
+            right: 30px; /* Dari kanan halaman */
+            top: 80px; /* Di bawah header */
+            z-index: 1000;
+        }
+        .desktop-search-icon {
+            color: #555;
+            font-size: 1.5rem; /* Ukuran ikon */
+            cursor: pointer;
+            padding: 5px; /* Area klik */
+        }
+        .desktop-search-icon:hover {
+            color: var(--accent-color);
+        }
+        /* Akhir Navigasi Desktop */
+
+        /* Overlay Menu Kategori */
+        .more-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1002;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .more-menu-overlay.visible {
+            display: flex;
+        }
+
+        .grid-menu-container {
+            background: #fff;
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            border-radius: 16px 16px 0 0;
+            box-sizing: border-box;
+            max-height: 80vh;
+            overflow-y: auto;
+            transform: translateY(100%);
+            transition: transform 0.3s ease-out;
+        }
+
+        .more-menu-overlay.visible .grid-menu-container {
+            transform: translateY(0);
+        }
+
+        .grid-menu-container h2 {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-family: var(--heading-font);
+        }
+
+        /* Overlay Pencarian */
+        .search-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1002;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .search-overlay.visible {
+            display: flex;
+        }
+
+        .search-container {
+            background: #fff;
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            border-radius: 16px 16px 0 0;
+            box-sizing: border-box;
+            max-height: 80vh;
+            overflow-y: auto;
+            transform: translateY(100%);
+            transition: transform 0.3s ease-out;
+        }
+
+        .search-overlay.visible .search-container {
+            transform: translateY(0);
+        }
+
+        .search-container h2 {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-family: var(--heading-font);
+        }
+
+        .search-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .search-button {
+            padding: 12px 20px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .search-results {
+            margin-top: 20px;
+        }
+
+        /* Kontrol Paginasi */
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 30px;
+            gap: 15px;
+            padding-bottom: 20px;
+        }
+
+        .pagination-button {
+            padding: 10px 20px;
+            border: 1px solid var(--accent-color);
+            background-color: #fff;
+            color: var(--accent-color);
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .pagination-button:hover:not(:disabled) {
+            background-color: var(--accent-color);
+            color: #fff;
+        }
+
+        .pagination-button:disabled {
+            border-color: #ccc;
+            color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Footer (Statis, tidak fixed) */
+        .site-footer {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+            font-size: 0.9em;
+            position: static;
+            box-shadow: none;
+            padding-bottom: 20px;
+        }
+
+        .footer-links {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .footer-links a {
+            color: #fff;
+            text-decoration: underline;
+            margin: 0 10px;
+            padding: 0;
+            border-radius: 0;
+            transition: none;
+        }
+
+        .footer-links a:hover {
+            background-color: transparent;
+            color: #ccc;
+        }
+
+        .copyright {
+            margin: 0;
+            color: #bdc3c7;
+        }
+
+        /* Gaya Grid Kategori dalam Overlay */
+        #category-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 2 kolom untuk mobile */
+            gap: 15px;
+            padding: 10px;
+        }
+
+        .category-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            overflow: hidden;
+            text-align: center;
+            transition: transform 0.2s ease-in-out, box-shadow 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .category-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .category-card img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--light-grey);
+        }
+
+        .category-card span {
+            display: block;
+            padding: 10px;
+            font-family: var(--heading-font);
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        /* Media Queries untuk Responsif */
+        @media (min-width: 600px) {
+            .news-list-item-wrapper {
+                grid-template-columns: 1fr 1fr;
+            }
+            .news-grid-container {
+                grid-template-columns: 1fr 1fr;
+            }
+            .news-list-item .news-image {
+                width: 100px;
+                height: 100px;
+            }
+            #category-grid {
+                grid-template-columns: 1fr 1fr 1fr; /* 3 kolom untuk tablet */
+            }
+        }
+
+        @media (min-width: 768px) {
+            .hero-list-item {
+                flex-direction: row;
+                align-items: flex-start;
+                padding: 15px;
+            }
+            .hero-list-item .news-image {
+                width: 400px;
+                height: 280px;
+                margin-right: 20px;
+                border-radius: 8px;
+            }
+            .hero-list-item .news-content {
+                padding: 0;
+            }
+            .hero-list-item .news-title {
+                font-size: 2.2rem;
+            }
+            .news-list-item .news-image {
+                width: 120px;
+                height: 120px;
+            }
+            #category-grid {
+                grid-template-columns: 1fr 1fr 1fr 1fr; /* 4 kolom untuk desktop kecil */
+            }
+
+            /* Desktop Specific Adjustments */
+            body {
+                padding-top: 120px; /* Header (70px) + Desktop Nav (50px) */
+                padding-bottom: 40px; /* Footer tidak fixed di desktop, kurangi padding */
+            }
+            #nav-wrapper {
+                display: none; /* Sembunyikan navigasi mobile di desktop */
+            }
+            .desktop-nav-wrapper {
+                display: block; /* Tampilkan navigasi desktop */
+                position: sticky; /* Sticky di desktop */
+                top: 70px; /* Di bawah header (50px) + sedikit jarak */
+                /* Z-index 999, border-radius 8px, box-shadow sudah ada */
+            }
+            .site-header {
+                height: 70px; /* Beri sedikit lebih banyak ruang untuk header di desktop */
+            }
+            .site-header .logo {
+                width: 60px; /* Ukuran logo di desktop */
+                height: 60px;
+            }
+            .site-header .site-title {
+                font-size: 1.8rem; /* Ukuran judul di desktop */
+            }
+            /* Search Icon di Desktop Nav (pindah ke kanan atas) */
+            .desktop-search-icon-wrapper {
+                display: block; /* Tampilkan di desktop */
+                position: absolute; /* Posisi absolut */
+                right: 30px; /* Dari kanan halaman */
+                top: 80px; /* Di bawah header */
+                z-index: 1000;
+            }
+        }
+
+        @media (min-width: 992px) {
+            .news-grid-container {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+            .news-grid .news-title {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MD4XVV58"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <header class="site-header">
+        <a href="index.html">
+            <img src="logo.png" alt="Logo Petungan" class="logo">
+        </a>
+        <a href="index.html">
+            <h1 id="site-title" class="site-title">Petungan</h1>
+        </a>
+    </header>
+
+    <div class="desktop-nav-wrapper">
+        <nav class="desktop-nav" id="desktop-main-nav">
+            <!-- Dynamic categories will be loaded here by JavaScript -->
+        </nav>
+    </div>
+    <div class="desktop-search-icon-wrapper">
+        <a href="#" id="desktop-search-news-btn-icon" class="desktop-search-icon"><i class="fas fa-search"></i></a>
+    </div>
+
+    <main class="container">
+        <div class="news-feed" id="news-feed-container">
+            <p>Memuat berita...</p>
+        </div>
+
+        <div class="pagination-controls" id="pagination-container" style="display: none;">
+            <button id="prev-page-btn" class="pagination-button">Sebelumnya</button>
+            <button id="next-page-btn" class="pagination-button">Selanjutnya</button>
+        </div>
+    </main>
+
+    <div class="more-menu-overlay" id="more-menu-overlay">
+        <div class="grid-menu-container">
+            <h2>Kategori Berita</h2>
+            <div id="category-grid"></div>
+        </div>
+    </div>
+
+    <div class="search-overlay" id="search-overlay">
+        <div class="search-container">
+            <h2>Cari Berita</h2>
+            <div class="search-form">
+                <input type="text" id="search-input" class="search-input" placeholder="Masukkan kata kunci...">
+                <button id="search-button" class="search-button">Cari</button>
+            </div>
+            <div id="search-results" class="search-results"></div>
+        </div>
+    </div>
+
+    <div id="nav-wrapper">
+        <nav class="mobile-nav">
+            <a href="index.html" id="mobile-home-btn"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="#" id="mobile-more-menu-btn"><i class="fas fa-th-large"></i><span>Kategori</span></a>
+            <a href="#" id="mobile-search-news-btn"><i class="fas fa-search"></i><span>Cari Berita</span></a>
+            <a href="#" id="mobile-latest-news-btn"><i class="fas fa-fire"></i><span>Berita Terbaru</span></a>
+        </nav>
+    </div>
+
+    <footer class="site-footer">
+        <div class="footer-links">
+            <a href="halaman.html?id=tentang">Tentang Kami</a>
+            <a href="halaman.html?id=kontak">Kontak</a>
+            <a href="halaman.html?id=privasi">Kebijakan Privasi</a>
+        </div>
+        <p class="copyright">&copy; 2025 Petungan. Semua Hak Cipta Dilindungi.</p>
+    </footer>
+
+    <script>
+        // --- KONSTANTA & INISIALISASI ---
+        const NEWS_PER_PAGE = 15;
+        let lastVisibleDoc = null;
+        let firstVisibleDoc = null;
+        let pagePointers = {};
+        let currentPage = 0;
+
+        pagePointers[0] = null;
+
+        // --- FUNGSI UTILITY ---
+        function getFirstImageFromContent(htmlContent) {
+            if (!htmlContent) return null;
+            const match = htmlContent.match(/<img[^>]+src="([^">]+)"/);
+            return match ? match[1] : null;
+        }
+
+        function formatCategoryName(slug) {
+            if (!slug || slug === 'undefined') return 'Umum';
+            return slug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        }
+
+        // Handle initial active class based on URL parameters for BOTH mobile and desktop nav
+        const activateNavButtons = (prefix) => {
+            // Remove active class from all relevant nav links first
+            document.querySelectorAll(`.${prefix}nav a`).forEach(link => link.classList.remove('active'));
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentCategorySlug = urlParams.get('kategori');
+
+            if (!urlParams.has('kategori') && !urlParams.has('cari') && !urlParams.has('terbaru')) {
+                // Activate Home button if no specific params
+                if (document.getElementById(prefix + 'home-btn')) {
+                    document.getElementById(prefix + 'home-btn').classList.add('active');
+                }
+            } else if (urlParams.has('kategori')) {
+                // Activate specific category link or "Semua Kategori" / "Kategori" fallback
+                if (currentCategorySlug && document.getElementById(`${prefix}category-${currentCategorySlug}-btn`)) {
+                    document.getElementById(`${prefix}category-${currentCategorySlug}-btn`).classList.add('active');
+                } else if (document.getElementById(`${prefix}more-menu-btn`)) { // For mobile "Kategori" button
+                    document.getElementById(`${prefix}more-menu-btn`).classList.add('active');
+                } else if (document.getElementById(`${prefix}all-categories-btn`)) { // For desktop "Semua Kategori" button
+                    document.getElementById(`${prefix}all-categories-btn`).classList.add('active');
+                } else if (document.getElementById(`${prefix}fallback-category-btn`)) { // For desktop "Kategori" fallback
+                    document.getElementById(`${prefix}fallback-category-btn`).classList.add('active');
+                }
+            } else if (urlParams.has('cari')) {
+                // Activate search button/icon
+                if (document.getElementById(prefix + 'search-news-btn')) {
+                    document.getElementById(prefix + 'search-news-btn').classList.add('active');
+                } else if (document.getElementById(`${prefix}search-news-btn-icon`)) { // For desktop search icon
+                    document.getElementById(`${prefix}search-news-btn-icon`).classList.add('active');
+                }
+            } else if (urlParams.has('terbaru')) {
+                // Activate latest news button
+                if (document.getElementById(prefix + 'latest-news-btn')) {
+                    document.getElementById(prefix + 'latest-news-btn').classList.add('active');
+                }
+            }
+        };
+
+        // --- FUNGSI PEMBUAT ELEMEN BERITA ---
+        function createHeroListItem(news) {
+            const newsUrl = `detail.html?id=${news.id}`;
+            const imageUrl = getFirstImageFromContent(news.content) || `https://picsum.photos/800/500?random=${news.id}`;
+            const element = document.createElement('a');
+            element.href = newsUrl;
+            element.className = 'news-item-card hero-list-item';
+
+            element.innerHTML = `
+                <img src="${imageUrl}" alt="${news.title || 'Gambar Berita Utama'}" class="news-image">
+                <div class="news-content">
+                    <h2 class="news-title">${news.title || 'Judul Berita Utama'}</h2>
+                    <p class="news-meta">Oleh: ${news.editor_name || 'Petungan'} - ${news.createdAt ? news.createdAt.toDate().toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}</p>
+                    <p class="news-excerpt">${news.excerpt || ''}</p>
+                </div>
+            `;
+            return element;
+        }
+
+        function createListItem(news) {
+            if (!news) return null;
+            const newsUrl = `detail.html?id=${news.id}`;
+            const imageUrl = getFirstImageFromContent(news.content) || `https://picsum.photos/200/200?random=${news.id}`;
+            const element = document.createElement('a');
+            element.href = newsUrl;
+            element.className = 'news-item-card news-list-item';
+
+            element.innerHTML = `
+                <img src="${imageUrl}" alt="${news.title || 'Gambar Berita'}" class="news-image">
+                <div class="news-content">
+                    <h3 class="news-title">${news.title || 'Judul Berita'}</h3>
+                    <p class="news-meta">Oleh: ${news.editor_name || 'Petungan'} - ${news.createdAt ? news.createdAt.toDate().toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}</p>
+                </div>
+            `;
+            return element;
+        }
+
+        function createGridItem(news) {
+            const newsUrl = `detail.html?id=${news.id}`;
+            const imageUrl = getFirstImageFromContent(news.content) || `https://picsum.photos/400/225?random=${news.id}`;
+            const element = document.createElement('a');
+            element.href = newsUrl;
+            element.className = 'news-item-card news-grid';
+
+            element.innerHTML = `
+                <img src="${imageUrl}" alt="${news.title || 'Gambar Berita'}" class="news-image">
+                <div class="news-content">
+                    <h4 class="news-title">${news.title || 'Judul Berita'}</h4>
+                    <p class="news-meta">Oleh: ${news.editor_name || 'Petungan'} - ${news.createdAt ? news.createdAt.toDate().toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}</p>
+                </div>
+            `;
+            return element;
+        }
+
+        // --- FUNGSI RENDER BERITA ---
+        function renderNews(articles) {
+            const newsContainer = document.getElementById('news-feed-container');
+            newsContainer.innerHTML = '';
+
+            if (articles.length === 0) {
+                newsContainer.innerHTML = '<p>Belum ada berita.</p>';
+                return;
+            }
+
+            // Artikel Pertama (Tampilan Daftar Hero)
+            if (articles[0]) {
+                newsContainer.appendChild(createHeroListItem(articles[0]));
+            }
+
+            // Artikel Ke-2 hingga Ke-5 (4 artikel, 2 pasang Tampilan Daftar)
+            const listItemWrapper = document.createElement('div');
+            listItemWrapper.className = 'news-list-item-wrapper';
+            for (let i = 1; i < Math.min(5, articles.length); i++) {
+                const listItem = createListItem(articles[i]);
+                if (listItem) listItemWrapper.appendChild(listItem);
+            }
+            if (listItemWrapper.children.length > 0) {
+                newsContainer.appendChild(listItemWrapper);
+            }
+
+            // Artikel Ke-6 hingga Seterusnya (Tampilan Grid)
+            const gridContainer = document.createElement('div');
+            gridContainer.className = 'news-grid-container';
+            for (let i = 5; i < articles.length; i++) {
+                const gridItem = createGridItem(articles[i]);
+                if (gridItem) gridContainer.appendChild(gridItem);
+            }
+            if (gridContainer.children.length > 0) {
+                newsContainer.appendChild(gridContainer);
+            }
+        }
+
+        // --- FUNGSI FETCH BERITA DENGAN PAGINASI ---
+        async function fetchNews(direction = 'current') {
+            const newsContainer = document.getElementById('news-feed-container');
+            const paginationContainer = document.getElementById('pagination-container');
+            newsContainer.innerHTML = '<p>Memuat berita...</p>';
+            paginationContainer.style.display = 'none';
+
+            document.getElementById('search-results').innerHTML = ''; // Hapus pesan hasil pencarian sebelumnya
+
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const categoryFilter = params.get('kategori');
+                const showLatest = params.get('terbaru');
+                const searchQuery = params.get('cari');
+
+                let query = db.collection('berita').orderBy('createdAt', 'desc');
+
+                if (categoryFilter) {
+                    query = query.where('category', '==', categoryFilter);
+                    document.getElementById('site-title').textContent = formatCategoryName(categoryFilter);
+                } else if (showLatest === 'true') {
+                    document.getElementById('site-title').textContent = 'Berita Terbaru';
+                    // Clear search input if navigating to 'Terbaru'
+                    const searchInput = document.getElementById('search-input');
+                    if (searchInput) searchInput.value = '';
+                } else if (searchQuery) {
+                    query = query.where('keywords', 'array-contains', searchQuery.toLowerCase());
+                    document.getElementById('site-title').textContent = `Hasil Pencarian: ${searchQuery}`;
+                } else {
+                    document.getElementById('site-title').textContent = 'Petungan';
+                }
+
+                let snapshot;
+                let docs = [];
+
+                if (direction === 'next') {
+                    if (pagePointers[currentPage + 1]) {
+                        snapshot = await query
+                            .startAfter(pagePointers[currentPage + 1])
+                            .limit(NEWS_PER_PAGE)
+                            .get();
+                    } else {
+                        snapshot = await query
+                            .startAfter(lastVisibleDoc)
+                            .limit(NEWS_PER_PAGE)
+                            .get();
+                    }
+                    if (!snapshot.empty) currentPage++;
+                } else if (direction === 'prev') {
+                    if (currentPage === 0) {
+                        snapshot = await query.limit(NEWS_PER_PAGE).get();
+                    } else {
+                        let reversedQuery = db.collection('berita')
+                                                .orderBy('createdAt', 'asc');
+
+                        if (categoryFilter) {
+                            reversedQuery = reversedQuery.where('category', '==', categoryFilter);
+                        } else if (showLatest === 'true') {
+                            // No additional 'where' clause
+                        } else if (searchQuery) {
+                            reversedQuery = reversedQuery.where('keywords', 'array-contains', searchQuery.toLowerCase());
+                        }
+
+                        const prevSnapshot = await reversedQuery
+                                                    .endBefore(firstVisibleDoc)
+                                                    .limitToLast(NEWS_PER_PAGE)
+                                                    .get();
+                        docs = prevSnapshot.docs.reverse();
+                        snapshot = { docs: docs, empty: docs.length === 0 };
+
+                        if (!snapshot.empty) currentPage--;
+                    }
+                } else {
+                    snapshot = await query.limit(NEWS_PER_PAGE).get();
+                }
+
+                if (snapshot.empty && currentPage === 0) {
+                    newsContainer.textContent = 'Belum ada berita.';
+                    return;
+                }
+                if (snapshot.empty) {
+                    newsContainer.textContent = 'Tidak ada berita lagi.';
+                    return;
+                }
+
+                const articles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderNews(articles);
+
+                firstVisibleDoc = snapshot.docs[0];
+                lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
+                pagePointers[currentPage] = firstVisibleDoc;
+
+                let nextQueryCheck = db.collection('berita').orderBy('createdAt', 'desc');
+                if (categoryFilter) {
+                    nextQueryCheck = nextQueryCheck.where('category', '==', categoryFilter);
+                } else if (showLatest === 'true') {
+                    // No additional 'where' clause
+                } else if (searchQuery) {
+                    nextQueryCheck = nextQueryCheck.where('keywords', 'array-contains', searchQuery.toLowerCase());
+                }
+                const nextBatch = await nextQueryCheck.startAfter(lastVisibleDoc).limit(1).get();
+                const hasNextPage = !nextBatch.empty;
+
+                paginationContainer.style.display = 'flex';
+                document.getElementById('prev-page-btn').disabled = (currentPage === 0);
+                document.getElementById('next-page-btn').disabled = !hasNextPage;
+
+            } catch (error) {
+                console.error("Error fetching news:", error);
+                newsContainer.innerHTML = '<p style="color:red;">Gagal memuat berita. Pastikan koneksi internet Anda stabil atau coba lagi nanti.</p>';
+            }
+        }
+
+        // --- FUNGSI PENCARIAN ---
+        async function searchNews(keyword) {
+            if (!keyword || keyword.trim() === '') {
+                document.getElementById('search-results').innerHTML = '<p style="color: red; text-align: center;">Silakan masukkan kata kunci pencarian.</p>';
+                return;
+            }
+
+            document.getElementById('search-overlay').classList.remove('visible');
+
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+
+            window.location.href = `index.html?cari=${encodeURIComponent(keyword)}`;
+        }
+
+        // --- FUNGSI LOAD KATEGORI UNTUK POPUP ---
+        async function loadCategoriesForPopup() {
+            const container = document.getElementById('category-grid');
+            if (!container) {
+                console.error("Elemen #category-grid tidak ditemukan.");
+                return;
+            }
+
+            container.innerHTML = '<p style="text-align: center;">Memuat kategori...</p>';
+            try {
+                // Ambil semua dokumen kategori utama
+                const mainCategoriesSnapshot = await db.collection('kategori').orderBy('nama').get();
+
+                container.innerHTML = '';
+
+                if (mainCategoriesSnapshot.empty) {
+                    console.log("Koleksi 'kategori' kosong.");
+                    container.innerHTML = '<p style="text-align: center;">Belum ada kategori.</p>';
+                    return;
+                }
+
+                // Kumpulkan semua kategori (utama dan sub) untuk ditampilkan di grid
+                const allCategoriesToDisplay = [];
+
+                mainCategoriesSnapshot.forEach(doc => {
+                    const mainCategory = doc.data();
+                    // Tambahkan kategori utama jika Anda ingin tampilkan sebagai kartu di grid
+                    if (mainCategory.slug && mainCategory.nama) {
+                        allCategoriesToDisplay.push({
+                            nama: mainCategory.nama,
+                            slug: mainCategory.slug,
+                            image: mainCategory.image
+                        });
+                    }
+
+                    // Tambahkan subkategori dari array jika ada
+                    if (mainCategory.subkategori && Array.isArray(mainCategory.subkategori)) {
+                        mainCategory.subkategori.forEach(sub => {
+                            if (sub.slug && sub.nama_sub) {
+                                allCategoriesToDisplay.push({
+                                    nama: sub.nama_sub,
+                                    slug: sub.slug,
+                                    image: sub.image
+                                });
+                            }
+                        });
+                    }
+                });
+
+                allCategoriesToDisplay.forEach((categoryData, index) => {
+                    const categoryCard = document.createElement('a');
+                    categoryCard.href = `index.html?kategori=${categoryData.slug}`;
+                    categoryCard.className = 'category-card';
+
+                    const imageUrl = categoryData.image || `https://picsum.photos/300/200?random=${categoryData.slug || index}`;
+                    categoryCard.innerHTML = `
+                        <img src="${imageUrl}" alt="${categoryData.nama || 'Kategori'}">
+                        <span>${categoryData.nama || 'Nama Kategori'}</span>
+                    `;
+                    container.appendChild(categoryCard);
+                });
+            } catch (error) {
+                console.error("Gagal memuat kategori:", error);
+                container.innerHTML = '<p style="color:red; text-align: center;">Gagal memuat kategori.</p>';
+            }
+        }
+
+        // FUNGSI BARU: Memuat kategori ke navigasi desktop
+        async function loadCategoriesForDesktopNav() {
+            const desktopMainNav = document.getElementById('desktop-main-nav');
+            // Clear previous dynamic category links to prevent duplicates on re-load
+            desktopMainNav.querySelectorAll('.dynamic-category-link').forEach(el => el.remove());
+
+            try {
+                const mainCategoriesSnapshot = await db.collection('kategori').orderBy('nama').get();
+                const categoriesToAdd = [];
+
+                mainCategoriesSnapshot.forEach(doc => {
+                    const mainCategory = doc.data();
+                    if (mainCategory.slug && mainCategory.nama) {
+                        categoriesToAdd.push({
+                            nama: mainCategory.nama,
+                            slug: mainCategory.slug
+                        });
+                    }
+                });
+
+                const maxCategoriesToShow = 6;
+                let categoriesRendered = 0;
+
+                // Add Home button first
+                const homeLink = document.createElement('a');
+                homeLink.href = 'index.html';
+                homeLink.id = 'desktop-home-btn';
+                homeLink.innerHTML = '<i class="fas fa-home"></i><span>Home</span>';
+                desktopMainNav.appendChild(homeLink);
+
+
+                // Add specific categories
+                for (const categoryData of categoriesToAdd) {
+                    if (categoriesRendered >= maxCategoriesToShow) break;
+                    const link = document.createElement('a');
+                    link.href = `index.html?kategori=${categoryData.slug}`;
+                    link.id = `desktop-category-${categoryData.slug}-btn`;
+                    link.textContent = categoryData.nama;
+                    link.classList.add('dynamic-category-link'); // Add class for identification
+                    desktopMainNav.appendChild(link);
+                    categoriesRendered++;
+                }
+
+                // Add "Semua Kategori" button if there are hidden categories
+                if (categoriesToAdd.length > maxCategoriesToShow) {
+                    const allCategoriesLink = document.createElement('a');
+                    allCategoriesLink.href = '#';
+                    allCategoriesLink.id = 'desktop-all-categories-btn';
+                    allCategoriesLink.innerHTML = '<i class="fas fa-th-large"></i><span>Semua Kategori</span>';
+                    allCategoriesLink.classList.add('dynamic-category-link'); // Add class for identification
+                    allCategoriesLink.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        loadCategoriesForPopup();
+                        document.getElementById('more-menu-overlay').classList.add('visible');
+                    });
+                    desktopMainNav.appendChild(allCategoriesLink);
+                }
+
+                // Removed "Berita Terbaru" button from desktop navigation as per request
+                // const latestNewsLink = document.createElement('a');
+                // latestNewsLink.href = 'index.html?terbaru=true';
+                // latestNewsLink.id = 'desktop-latest-news-btn';
+                // latestNewsLink.innerHTML = '<i class="fas fa-fire"></i><span>Berita Terbaru</span>';
+                // desktopMainNav.appendChild(latestNewsLink);
+
+                // Call active state after dynamic categories are loaded
+                activateNavButtons('desktop-');
+
+            } catch (error) {
+                console.error("Gagal memuat kategori untuk navigasi desktop:", error);
+                // Fallback: If categories fail to load, still show Home and a generic Kategori button
+                const homeLink = document.createElement('a');
+                homeLink.href = 'index.html';
+                homeLink.id = 'desktop-home-btn';
+                homeLink.innerHTML = '<i class="fas fa-home"></i><span>Home</span>';
+                desktopMainNav.appendChild(homeLink);
+
+                const fallbackCategoryLink = document.createElement('a');
+                fallbackCategoryLink.href = '#';
+                fallbackCategoryLink.id = 'desktop-fallback-category-btn';
+                fallbackCategoryLink.innerHTML = '<i class="fas fa-th-large"></i><span>Kategori</span>'; // Default text if error
+                fallbackCategoryLink.classList.add('dynamic-category-link'); // Add class for identification
+                fallbackCategoryLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    loadCategoriesForPopup();
+                    document.getElementById('more-menu-overlay').classList.add('visible');
+                });
+                desktopMainNav.appendChild(fallbackCategoryLink);
+
+                // Removed "Berita Terbaru" from fallback as well
+                // const latestNewsLink = document.createElement('a');
+                // latestNewsLink.href = 'index.html?terbaru=true';
+                // latestNewsLink.id = 'desktop-latest-news-btn';
+                // latestNewsLink.innerHTML = '<i class="fas fa-fire"></i><span>Berita Terbaru</span>';
+                // desktopMainNav.appendChild(latestNewsLink);
+
+                activateNavButtons('desktop-');
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+        document.getElementById('next-page-btn').addEventListener('click', () => {
+            fetchNews('next');
+        });
+
+        document.getElementById('prev-page-btn').addEventListener('click', () => {
+            fetchNews('prev');
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchNews('current');
+            loadCategoriesForDesktopNav(); // Call this new function
+
+            // Event listener for Mobile Navigation (already exists)
+            document.getElementById('mobile-home-btn').addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.href = 'index.html';
+            });
+            document.getElementById('mobile-more-menu-btn').addEventListener('click', (e) => {
+                e.preventDefault();
+                loadCategoriesForPopup();
+                document.getElementById('more-menu-overlay').classList.add('visible');
+                document.querySelectorAll('.mobile-nav a').forEach(link => link.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+            });
+
+            // Close category menu overlay
+            document.getElementById('more-menu-overlay').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('more-menu-overlay')) {
+                    document.getElementById('more-menu-overlay').classList.remove('visible');
+                }
+            });
+
+            document.getElementById('mobile-search-news-btn').addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('search-overlay').classList.add('visible');
+                document.querySelectorAll('.mobile-nav a').forEach(link => link.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                document.getElementById('search-input').focus();
+            });
+
+            document.getElementById('search-overlay').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('search-overlay')) {
+                    document.getElementById('search-overlay').classList.remove('visible');
+                }
+            });
+
+            document.getElementById('search-button').addEventListener('click', () => {
+                const keyword = document.getElementById('search-input').value.trim();
+                searchNews(keyword);
+            });
+
+            document.getElementById('search-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const keyword = document.getElementById('search-input').value.trim();
+                    searchNews(keyword);
+                }
+            });
+
+            document.getElementById('mobile-latest-news-btn').addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.href = 'index.html?terbaru=true';
+                document.querySelectorAll('.mobile-nav a').forEach(link => link.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+            });
+
+            // Event listener for desktop search icon
+            const desktopSearchIconBtn = document.getElementById('desktop-search-news-btn-icon');
+            if (desktopSearchIconBtn) {
+                desktopSearchIconBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    document.getElementById('search-overlay').classList.add('visible');
+                    document.getElementById('search-input').focus();
+                });
+            }
+
+            activateNavButtons('mobile-'); // For mobile nav
+            // Desktop nav activation is called inside loadCategoriesForDesktopNav()
+            // to ensure dynamic elements are present before trying to activate them.
+
+        });
+        // SERVICE WORKER
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(reg => { // Changed path to relative
+                    console.log('Service Worker Registered:', reg);
+                }).catch(err => {
+                    console.error('Service Worker Registration Failed:', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
