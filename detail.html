@@ -893,25 +893,6 @@
         const synth = window.speechSynthesis;
         let currentUtterance = null;
         let isSpeaking = false;
-        let voices = []; // Array to store available voices
-
-        // Function to populate voices once they are loaded
-        function populateVoices() {
-            voices = synth.getVoices();
-            // Optional: Log voices to console to see available options
-            // console.log("Available voices:", voices);
-        }
-
-        // Listen for voices to be loaded (important for some browsers/devices)
-        // This ensures voices array is populated before trying to use them.
-        if (synth.onvoiceschanged !== undefined) {
-            synth.onvoiceschanged = populateVoices;
-        } else {
-            // Fallback for browsers that don't fire onvoiceschanged immediately
-            // This might be called before voices are fully loaded, leading to empty voices array initially.
-            populateVoices();
-        }
-
 
         // --- FUNGSI UTILITY ---
         function getFirstImageFromContent(htmlContent) {
@@ -1009,12 +990,6 @@
                 return;
             }
 
-            // Check if SpeechSynthesis is supported and voices are available
-            if (!('speechSynthesis' in window) || voices.length === 0) {
-                alert("Browser Anda tidak mendukung Text-to-Speech atau tidak ada suara yang tersedia. Pastikan Anda memiliki paket bahasa yang terinstal di perangkat Anda.");
-                return;
-            }
-
             // If not speaking, start new speech
             let textToSpeak = stripHtml(articleContentElement.innerHTML);
             textToSpeak = normalizeTextForSpeech(textToSpeak); // Normalize text for better pronunciation
@@ -1027,13 +1002,9 @@
             currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
             currentUtterance.lang = 'id-ID'; // Set language to Indonesian
 
-            // Attempt to find an Indonesian voice
-            const idVoice = voices.find(voice => voice.lang === 'id-ID');
-            if (idVoice) {
-                currentUtterance.voice = idVoice;
-            } else {
-                console.warn("Indonesian voice not found. Using default voice.");
-            }
+            // Optional: Set voice if available and desired
+            // You can get available voices with synth.getVoices() and then set currentUtterance.voice
+            // For mobile, voices might not be immediately available.
 
             currentUtterance.onstart = () => {
                 isSpeaking = true;
@@ -1052,11 +1023,9 @@
                 isSpeaking = false;
                 ttsBtnIcon.classList.remove('fa-volume-mute');
                 ttsBtnIcon.classList.add('fa-volume-up');
-                // Provide user feedback
-                alert("Gagal memutar suara. Pastikan Anda memiliki paket bahasa yang terinstal di perangkat Anda dan coba lagi.");
+                // You might want to show a user-friendly message here, e.g., "Gagal memutar suara."
             };
 
-            // Speak directly without setTimeout to maintain direct user interaction for autoplay policies
             synth.speak(currentUtterance);
         }
 
@@ -1441,3 +1410,4 @@
     </script>
 </body>
 </html>
+
