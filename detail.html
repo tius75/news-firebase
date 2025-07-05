@@ -967,66 +967,54 @@
 
         // --- FUNGSI TEXT-TO-SPEECH ---
         function toggleSpeech() {
-    const articleContentElement = document.querySelector('.article-content');
-    const ttsBtnIcon = document.querySelector('#text-to-speech-btn i');
+            const articleContentElement = document.querySelector('.article-content');
+            const ttsBtnIcon = document.querySelector('#text-to-speech-btn i');
 
-    if (!articleContentElement) return;
+            if (!articleContentElement) {
+                console.error("Article content element not found.");
+                return;
+            }
 
-    if (synth.speaking) {
-        synth.cancel();
-        isSpeaking = false;
-        ttsBtnIcon.classList.remove('fa-volume-mute');
-        ttsBtnIcon.classList.add('fa-volume-up');
-        return;
-    }
+            // If speech is currently ongoing, stop it
+            if (synth.speaking) {
+                synth.cancel();
+                isSpeaking = false;
+                ttsBtnIcon.classList.remove('fa-volume-mute');
+                ttsBtnIcon.classList.add('fa-volume-up');
+                return;
+            }
 
-    let rawText = stripHtml(articleContentElement.innerHTML);
-    rawText = convertNumbersToText(rawText);
+            // If not speaking, start new speech
+            const textToSpeak = stripHtml(articleContentElement.innerHTML);
 
-    currentUtterance = new SpeechSynthesisUtterance(rawText);
-    currentUtterance.lang = 'id-ID';
+            if (textToSpeak.trim() === '') {
+                console.warn("No text to speak.");
+                return;
+            }
 
-    currentUtterance.onstart = () => {
-        isSpeaking = true;
-        ttsBtnIcon.classList.remove('fa-volume-up');
-        ttsBtnIcon.classList.add('fa-volume-mute');
-    };
+            currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
+            currentUtterance.lang = 'id-ID'; // Set language to Indonesian
 
-    currentUtterance.onend = () => {
-        isSpeaking = false;
-        ttsBtnIcon.classList.remove('fa-volume-mute');
-        ttsBtnIcon.classList.add('fa-volume-up');
-    };
+            currentUtterance.onstart = () => {
+                isSpeaking = true;
+                ttsBtnIcon.classList.remove('fa-volume-up');
+                ttsBtnIcon.classList.add('fa-volume-mute');
+            };
 
-    currentUtterance.onerror = () => {
-        isSpeaking = false;
-        ttsBtnIcon.classList.remove('fa-volume-mute');
-        ttsBtnIcon.classList.add('fa-volume-up');
-    };
+            currentUtterance.onend = () => {
+                isSpeaking = false;
+                ttsBtnIcon.classList.remove('fa-volume-mute');
+                ttsBtnIcon.classList.add('fa-volume-up');
+            };
 
-    synth.speak(currentUtterance);
-}
+            currentUtterance.onerror = (event) => {
+                console.error('SpeechSynthesisUtterance.onerror', event);
+                isSpeaking = false;
+                ttsBtnIcon.classList.remove('fa-volume-mute');
+                ttsBtnIcon.classList.add('fa-volume-up');
+            };
 
-function convertNumbersToText(text) {
-    return text.replace(/\b\d{1,15}\b/g, function(numStr) {
-        const num = parseInt(numStr, 10);
-        if (isNaN(num)) return numStr;
-        return numberToBahasa(num);
-    });
-}
-
-function numberToBahasa(n) {
-    const satuan = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan"];
-    if (n < 10) return satuan[n];
-    if (n < 20) return n === 10 ? "sepuluh" : satuan[n - 10] + " belas";
-    if (n < 100) return satuan[Math.floor(n / 10)] + " puluh " + satuan[n % 10];
-    if (n < 200) return "seratus " + numberToBahasa(n - 100);
-    if (n < 1000) return satuan[Math.floor(n / 100)] + " ratus " + numberToBahasa(n % 100);
-    if (n < 2000) return "seribu " + numberToBahasa(n - 1000);
-    if (n < 1000000) return numberToBahasa(Math.floor(n / 1000)) + " ribu " + numberToBahasa(n % 1000);
-    if (n < 1000000000) return numberToBahasa(Math.floor(n / 1000000)) + " juta " + numberToBahasa(n % 1000000);
-    return n.toString();
-}
+            synth.speak(currentUtterance);
         }
 
 
