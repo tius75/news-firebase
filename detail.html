@@ -1430,11 +1430,15 @@ o<!DOCTYPE html>
                         loadRelatedNews(news.category, newsId);
                     }
 
-                    // --- Menampilkan pop-up khusus di bawah judul berita ---
-                    const popupMessage = document.createElement('div');
-                    popupMessage.className = 'custom-popup-message';
-                    popupMessage.innerHTML = '<span>Selamat datang di Petungan.com</span><span>Klik Icon Speaker, isi berita akan dibacakan otomatis.</span>';
+                    
 
+// --- Menampilkan pop-up khusus di bawah judul berita ---
+const popupMessage = document.createElement('div');
+popupMessage.className = 'custom-popup-message';
+// Pastikan setiap kalimat dibungkus dalam tag <span> terpisah
+popupMessage.innerHTML = '<span>Selamat datang di Petungan.com</span><span>Klik Icon Speaker, isi berita akan dibacakan otomatis.</span>';
+
+// ... kode setelahnya untuk posisi dan timing
                     // Tentukan posisi di bawah judul berita
                     const titleElement = articleContainer.querySelector('.article-title');
                     if (titleElement) {
