@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+o<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -727,42 +727,45 @@
             opacity: 1;
         }
 
-        /* Gaya untuk pop-up khusus di bawah judul berita */
-        .custom-popup-message {
-            position: absolute; /* Diposisikan relatif terhadap elemen induk (.article-container) */
-            background-color: white;
-            color: black;
-            font-size: 20px; /* Ukuran font lebih besar */
-            padding: 15px 20px; /* Padding lebih besar */
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.25);
-            z-index: 1005; /* Lebih tinggi dari elemen lain */
-            opacity: 0;
-            transition: opacity 0.4s ease-in-out; /* Transisi lebih halus */
-            text-align: center;
-            left: 50%; /* Posisikan di tengah secara horizontal */
-            transform: translateX(-50%); /* Koreksi posisi agar benar-benar di tengah */
-            max-width: 90%; /* Batasi lebar agar responsif */
-            box-sizing: border-box; /* Pastikan padding termasuk dalam lebar */
-            min-height: 80px; /* Tinggi minimum untuk memastikan teks terlihat */
-            display: flex; /* Untuk menata teks di dalamnya */
-            flex-direction: column; /* Teks akan berada di baris baru */
-            justify-content: center; /* Pusatkan teks secara vertikal */
-            align-items: center; /* Pusatkan teks secara horizontal */
-            line-height: 1.4; /* Jarak antar baris */
-        }
+/* Gaya untuk pop-up khusus di bawah judul berita */
+.custom-popup-message {
+    position: absolute; 
+    background-color: white;
+    color: black;
+    font-size: 20px; 
+    padding: 15px 20px; 
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+    z-index: 1005; 
+    opacity: 0;
+    transition: opacity 0.4s ease-in-out; 
+    text-align: center;
+    left: 50%; 
+    transform: translateX(-50%); 
+    max-width: 90%; 
+    box-sizing: border-box; 
+    min-height: 80px; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+    align-items: center; 
+    line-height: 1.4; 
 
-        .custom-popup-message span {
-            display: block; /* Pastikan setiap baris teks memiliki blok sendiri */
-            margin-bottom: 5px; /* Jarak antar baris teks dalam pop-up */
-        }
-        .custom-popup-message span:last-child {
-            margin-bottom: 0;
-        }
+    /* --- Perubahan untuk rasio horizontal 16:9 --- */
+    width: 80vw; /* Atur lebar relatif terhadap viewport width */
+    max-width: 600px; /* Batasi lebar maksimum */
+    aspect-ratio: 16 / 9; /* Ini akan memaksa rasio 16:9 */
+    /* Hapus min-height jika aspect-ratio sudah cukup, atau sesuaikan jika perlu */
+    /* min-height: unset; */
+}
 
-        .custom-popup-message.show {
-            opacity: 1;
-        }
+.custom-popup-message span {
+    display: block; 
+    margin-bottom: 5px; /* --- Ini yang akan memberi jarak antar baris --- */
+}
+.custom-popup-message span:last-child {
+    margin-bottom: 0;
+}
 
 
         /* Gaya untuk overlay loading TTS */
