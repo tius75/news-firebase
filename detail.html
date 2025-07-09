@@ -886,8 +886,7 @@
 
     <div class="desktop-nav-wrapper">
         <nav class="desktop-nav" id="desktop-main-nav">
-            <!-- Dynamic categories and Home button will be loaded here by JavaScript -->
-        </nav>
+            </nav>
     </div>
     <div class="desktop-search-icon-wrapper">
         <a href="#" id="desktop-search-news-btn-icon" class="desktop-search-icon"><i class="fas fa-search"></i></a>
@@ -940,9 +939,7 @@
         <p class="copyright">&copy; 2025 Petungan. Semua Hak Cipta Dilindungi.</p>
     </footer>
 
-    <!-- Elemen untuk menampilkan pesan sementara -->
     <div id="temp-message" class="temp-message"></div>
-    <!-- Overlay loading untuk TTS -->
     <div id="tts-loading-overlay" class="tts-loading-overlay">
         <div class="spinner"></div>
         <span>Memuat suara...</span>
@@ -1290,7 +1287,7 @@
                     ttsBtnIcon.classList.add('fa-volume-mute');
                     // Re-apply highlight if it was removed by onpause (though it shouldn't be)
                     if (highlightedElement && !highlightedElement.classList.contains('tts-highlight')) {
-                         highlightedElement.classList.add('tts-highlight');
+                           highlightedElement.classList.add('tts-highlight');
                     }
                 };
 
@@ -1389,6 +1386,9 @@
                     if (news.category) {
                         loadRelatedNews(news.category, newsId);
                     }
+
+                    // --- Menampilkan pop-up setelah detail berita dimuat ---
+                    showTemporaryMessage("Klik Icon Speaker, isi berita akan dibacakan otomatis.", 7000); // Durasi 7 detik
 
                 } else {
                     articleContainer.innerHTML = '<p style="color:red;">Berita tidak ditemukan.</p>';
