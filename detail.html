@@ -584,6 +584,7 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.08);
             padding: 20px;
             margin-top: 20px;
+            position: relative; /* Penting untuk penempatan pop-up absolut */
         }
 
         .article-title {
@@ -705,7 +706,7 @@
             background-color: var(--accent-color); /* Use accent color for TTS button */
         }
 
-        /* Gaya untuk pesan sementara */
+        /* Gaya untuk pesan sementara (yang lama) */
         .temp-message {
             position: fixed;
             bottom: 80px; /* Di atas navigasi mobile */
@@ -724,6 +725,30 @@
         .temp-message.show {
             opacity: 1;
         }
+
+        /* Gaya untuk pesan khusus di atas gambar atau di bawah judul berita */
+        .custom-popup-message {
+            position: absolute; /* Diposisikan relatif terhadap elemen induknya */
+            background-color: white;
+            color: black;
+            font-size: 14px;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1005; /* Lebih tinggi dari elemen lain */
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            white-space: nowrap;
+            /* Tambahan untuk responsivitas/penempatan: */
+            left: 50%; /* Awalnya di tengah horizontal */
+            transform: translateX(-50%); /* Geser ke kiri setengah lebar elemen untuk penempatan tengah */
+            text-align: center;
+        }
+
+        .custom-popup-message.show {
+            opacity: 1;
+        }
+
 
         /* Gaya untuk overlay loading TTS */
         .tts-loading-overlay {
@@ -957,7 +982,7 @@
         let isPausedBySystem = false; // Flag to track if system paused TTS
         let highlightedElement = null; // To keep track of the currently highlighted element
 
-        // Function to display temporary messages to the user
+        // Function to display temporary messages to the user (still useful for other messages)
         function showTemporaryMessage(message, duration = 3000) {
             const messageElement = document.getElementById('temp-message');
             if (messageElement) {
@@ -1387,8 +1412,44 @@
                         loadRelatedNews(news.category, newsId);
                     }
 
-                    // --- Menampilkan pop-up setelah detail berita dimuat ---
-                    showTemporaryMessage("Klik Icon Speaker, isi berita akan dibacakan otomatis.", 7000); // Durasi 7 detik
+                    // --- Menampilkan pop-up khusus di bawah judul berita ---
+                    const popupMessage = document.createElement('div');
+                    popupMessage.className = 'custom-popup-message';
+                    popupMessage.textContent = 'Klik Icon Speaker, isi berita akan dibacakan otomatis.';
+
+                    // Tentukan posisi di bawah judul berita
+                    const titleElement = articleContainer.querySelector('.article-title');
+                    if (titleElement) {
+                        // Menggunakan getBoundingClientRect untuk mendapatkan posisi dan ukuran elemen
+                        const titleRect = titleElement.getBoundingClientRect();
+                        
+                        // Menambahkan pop-up ke article-container agar posisinya relatif terhadap artikel
+                        // dan tidak scroll dengan body jika artikelnya pendek
+                        articleContainer.appendChild(popupMessage);
+                        
+                        // Set posisi top relatif terhadap parent (article-container)
+                        // dan adjust left untuk di tengah
+                        popupMessage.style.top = `${(titleRect.bottom - articleContainer.getBoundingClientRect().top) + 10}px`;
+                        // Kita tidak perlu mengatur 'left' di sini karena CSS .custom-popup-message sudah memiliki left: 50% dan transform: translateX(-50%)
+                        // yang akan menempatkannya di tengah secara horizontal
+                        
+                        setTimeout(() => {
+                            popupMessage.classList.add('show');
+                        }, 100); // Sedikit delay untuk memastikan rendering elemen
+                        setTimeout(() => {
+                            popupMessage.classList.remove('show');
+                            setTimeout(() => {
+                                // Hapus elemen dari DOM setelah transisi opacity selesai
+                                if (popupMessage.parentNode) {
+                                    popupMessage.parentNode.removeChild(popupMessage);
+                                }
+                            }, 300); // Sesuaikan dengan durasi transisi opacity
+                        }, 7000); // Durasi pop-up 7 detik
+                    } else {
+                        console.warn("Elemen judul berita tidak ditemukan, tidak dapat memposisikan pop-up dengan tepat.");
+                        // Fallback jika judul tidak ditemukan, bisa tampilkan pop-up umum jika diinginkan
+                        showTemporaryMessage("Klik Icon Speaker, isi berita akan dibacakan otomatis.", 7000);
+                    }
 
                 } else {
                     articleContainer.innerHTML = '<p style="color:red;">Berita tidak ditemukan.</p>';
